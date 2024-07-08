@@ -1,0 +1,433 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><title>分布式ID的5种生成方式以及Go源码中的一种应用 | 极客之道</title><meta name="keywords" content="分布式ID的5种生成方式以及Go源码中的一种应用"><meta name="author" content="ivansli"><meta name="copyright" content="ivansli"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#f7f9fe"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-touch-fullscreen" content="yes"><meta name="apple-mobile-web-app-title" content="分布式ID的5种生成方式以及Go源码中的一种应用"><meta name="application-name" content="分布式ID的5种生成方式以及Go源码中的一种应用"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="#f7f9fe"><meta property="og:type" content="article"><meta property="og:title" content="分布式ID的5种生成方式以及Go源码中的一种应用"><meta property="og:url" content="https://blog.ivansli.com/2022/10/04/5-ways-generate-distributed-unique-id/index.html"><meta property="og:site_name" content="极客之道"><meta property="og:description" content="分布式ID的5种生成方式以及Go源码中的一种应用"><meta property="og:locale" content="zh-CN"><meta property="og:image" content="https://blog.ivansli.com/img/2022/10/0001.png"><meta property="article:author" content="ivansli"><meta property="article:tag" content="伊万的小站,ivansli,编程技术,编程技术之道,编程原理,go开发技巧"><meta name="twitter:card" content="summary"><meta name="twitter:image" content="https://blog.ivansli.com/img/2022/10/0001.png"><meta name="description" content="分布式ID的5种生成方式以及Go源码中的一种应用"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://blog.ivansli.com/2022/10/04/5-ways-generate-distributed-unique-id/"><link rel="preconnect"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="xxx"/><meta name="baidu-site-verification" content="code-xxx"/><meta name="msvalidate.01" content="xxx"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="/pluginsSrc/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="/pluginsSrc/@fancyapps/ui/dist/fancybox/fancybox.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://npm.elemecdn.com/anzhiyu-theme-static@1.0.0/swiper/swiper.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  linkPageTop: undefined,
+  peoplecanvas: undefined,
+  postHeadAiDescription: undefined,
+  diytitle: undefined,
+  LA51: undefined,
+  greetingBox: undefined,
+  twikooEnvId: 'https://blogtalk.ivansli.com',
+  commentBarrageConfig:undefined,
+  root: '/',
+  preloader: undefined,
+  friends_vue_info: undefined,
+  navMusic: false,
+  mainTone: undefined,
+  authorStatus: {"skills":["🤖️ 数码科技爱好者","🔍 分享与热心帮助","🏃 脚踏实地行动派"]},
+  algolia: undefined,
+  localSearch: undefined,
+  translate: {"defaultEncoding":2,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"简","rightMenuMsgToTraditionalChinese":"转为繁体","rightMenuMsgToSimplifiedChinese":"转为简体"},
+  noticeOutdate: {"limitDay":365,"position":"top","messagePrev":"It has been","messageNext":"days since the last update, the content of the article may be outdated."},
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    simplehomepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"copy":true,"copyrightEbable":false,"limitCount":50,"languages":{"author":"作者: ivansli","link":"链接: ","source":"来源: 极客之道","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。","copySuccess":"复制成功，复制和转载请标注本文地址"}},
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#425AEF","bgDark":"#1f1f1f","position":"top-center"},
+  source: {
+    justifiedGallery: {
+      js: '/pluginsSrc/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: '/pluginsSrc/flickr-justified-gallery/dist/fjGallery.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: true,
+  isAnchor: false,
+  shortcutKey: undefined,
+  autoDarkmode: true
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  configTitle: '极客之道',
+  title: '分布式ID的5种生成方式以及Go源码中的一种应用',
+  postAI: '',
+  pageFillDescription: '关于分布式ID, 常见的5种分布式ID生成方式, UUID, Twitter snowflake, Database auto-increment, Redis increment, Database segment, 生成布式ID的一些限制, Go源码中 goid 的生成原理, References关于分布式从目前互联网的系统架构来看大部分公司为了避免服务节点出现单点故障保持高可用高性能等特性在部署服务时都会部署多个节点每个节点承担整个服务的一部分请求对于同一服务多个节点中的每个节点来说提供的功能相同节点在处理数据的过程中会根据不同的业务场景操作相同或不同的数据源对于操作相同的数据源则会形成数据竞争大部分情况下需要加锁串行执行对于操作不同的数据源则可以并行并发处理无需加锁对于某些场景下的数据资源需要有全局唯一的数据资源标识例如电商系统中的订单号聊天群组中的消息号上传文件到存储系统中之后生成的文件号用户注册系统中的用户号商户系统中的商户号开放平台中的开发者账号等等场景这些号在分布式系统架构中可以统称为分布式常见的种分布式生成方式按照是否需要协调节点生成分布式的方法可以分为大类不需要联网单服务节点可以在本地生成需要联网依赖协调节点生成这大类中又可以细分出来多种具体的实现方式汇总如下图所示图片来自维基百科通用唯一识别码用于计算机体系中以识别信息的一个位标识符是由一个进制下的位数所构成故理论上的总数为约等于就是说若每纳秒产生万亿个要花亿年才会将所有用完在大约年内每秒生成亿个后创建单个重复的概率将达到的标准型式包含个进制数字以连字号分为五段形式为的个字符格式示例四位数字表示版本数字的一至三个最高有效位表示变体标准中定义了五个版本并且在特定用例中每个版本可能比其他版本更合适版本由指示版本是根据时间和节点通常是地址生成版本是根据标识符通常是组或用户时间和节点生成版本版本确定性通过散列名字空间标识符和名称生成版本使用随机性或伪随机性生成以版本为例其所有值的空间为这个值空间有多大呢如果从宇宙诞生开始每秒生成一个则到现在大约共有特点生成简单单节点就可以生成不依赖协调节点是非数字不会随着时间推移增长的变体通用唯一词典分类标识符被视为是一种的替代解决方案根据不同的定义把的不同位划分为不同的段保留位时间戳表示了自选定的时期以来的毫秒数毫秒大于可以工作年年之后有多少公司能存活年需要新的算法或者技术来处理数据中心共可容纳个数据中心机器共可容纳个机器数据中心机器如果设置有问题可能会导致最终生成的冲突一般可以通过环境变量进行设置数字序列号共有种组合序列号通过进程机器内部自增得到每毫秒重置为除非同一毫秒内有多个生成否则为一台机器上每毫秒最多生成个新的特点的位根据不同含义划分为个段生成简单单节点就可以生成不依赖协调节点可以是数字一般是数字也可以转换为进制的非数字字符串从目前来看市面上不同的公司不同的编程语言都有参考来开发出相同或相近的实现有些实现甚至为了获得更大的数值域空间把扩充为数据库主键具有天然的自增特性每次对数据进行操作主键都会自增但是由于数据库会频繁的读取操作磁盘数据所以性能受限于磁盘的并且大部分情况下如果数据库是单点的话也存在单点故障问题因此也会有基于数据库自增的优化版方案使用多个数据库节点每个数据库节点的自增步长不同特点主键单调递增生成性能受限于磁盘当添加删除数据库服务器节点时无法很好的进行扩展纯数字属于内存型数据库除了数据可以持久化之外最大的特点是数据操作都在内存中执行读写性能非常高并且在数据的操作中有命令可以进行自增操作特点相比数据库来说延迟低需要额外的中间件纯数字众所周知跨进程的数据操作会有大量的时间花费在网络传输操作上非跨进程的本地内部操作效率最高那么便是基于此种思想的一种实现方式特点使用数据库为多个服务器节点保存全局数值数据库也可替换为或其他中间件无需多次请求外部中间件减少网络传输操作时间消耗充分利用进程本地操作的高效性纯数字主流实现方式之一一般使用方式程序在启动之后去数据库申请一段数值空间在原有基础上获取一段获得之后缓存在程序内部某全局变量中进程内为需要的业务根据规则分配一个数值空间中的数值当数值空间消耗完后再次申请一段新的数值空间思考某种情况下整个数值空间会存在空洞为什么生成布式的一些限制在不同的场景下对于分布式也会存在一些特有的限制例如订单只能是数字文件可以是字符串等在设计分布式的生成规则以及技术方案选型时可能需要思考是否具备以下方面是否必须全局唯一是否只能是数字是否必须是是否根据时间有序是否每秒钟必须生成数量达到某个量级是否需要针对安全性做一些特殊处理例如不能通过推测出今天的订单数量不同的场景可以选择不同的实现方式或者对多种实现方式进行组合总之适合的才是最好的源码中的生成原理对于阅读过内核源码或者熟知模型的人来说可能都会知道每个都会存在一个不可导出的字段用来标识当前这个资源的生成原理又是怎么样的呢一起通过源码来追溯一下吧对于模型的原理以及交互逻辑这里不再进行讲解可以查阅相关资料源码位置仅仅列出此次需要的字段以及代码其他省略用于存储运行时调度器的全局信息存储全局的已经分配出去的用于标识的数值思考下面字段为什么是模型中的每个的标识这里的类型是模型中的模型中的在某个中调用关键字生成新的时都会优先选择把新生成的存放到当前的本地队列中当前不仅思考下面个字段为什么是已经使用的数值当前批量申请的的最大值与相等时则表示耗尽了需要重新申请在代码中每次调用类似的代码时都会生成或者复用空闲的通过如下示例代码来进行验证执行得到如下汇编由汇编可知使用关键字的确会调用的方法来生成源码位置仅仅列出此次需要的字段以及代码其他省略的声明代码位置在系统栈执行具体的生成逻辑在这里获取当前所绑定的通过生成一个新的中存储着一段在申请的用于分配给的数值域每次批量申请个如果已经耗尽则重新申请一批通过原子操作在中批量获取一段新的数值域赋值给当前这一行为添加的用于调试的代码非官方源码新生成的的值这里发生了类型转换这一行为添加的用于调试的代码非官方源码通过在中找到文件在方法中添加两行调试代码打印每次获取的数值域以及每个新生成获得的值简单的示例代码执行示例代码得到打印结果如下所示通过示例看到分别给分配一次每次批量获取个获得的值域如下所示分配次数未分配第一次分配第二次分配由表可以看出的值域符合公式且值域为左闭右开区间因此可知初始状态等于所以的等于仔细回想讨论过的种分布式生成方法如果把比作比作比作那么的生成逻辑是不是与的方式非常相似呢',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2023-10-31 13:17:44',
+  postMainColor: '',
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#18171d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f7f9fe')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+          const isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches
+          const isNotSpecified = window.matchMedia('(prefers-color-scheme: no-preference)').matches
+          const hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+
+          if (t === undefined) {
+            if (isLightMode) activateLightMode()
+            else if (isDarkMode) activateDarkMode()
+            else if (isNotSpecified || hasNoSupport) {
+              const now = new Date()
+              const hour = now.getHours()
+              const isNight = hour <= 6 || hour >= 18
+              isNight ? activateDarkMode() : activateLightMode()
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addListener(e => {
+              if (saveToLocal.get('theme') === undefined) {
+                e.matches ? activateDarkMode() : activateLightMode()
+              }
+            })
+          } else if (t === 'light') activateLightMode()
+          else activateDarkMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 6.3.0"></head><body data-type="anzhiyu"><div id="web_bg"></div><div id="an_music_bg"></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><div id="nav-group"><span id="blog_name"><a id="site-name" href="/" accesskey="h"><div class="title">极客之道</div><i class="anzhiyufont anzhiyu-icon-house-chimney"></i></a></span><div class="mask-name-container"><div id="name-container"><a id="page-name" href="javascript:anzhiyu.scrollToDest(0, 500)">PAGE_NAME</a></div></div><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/"><i class="anzhiyufont anzhiyu-icon-house-chimney faa-tada"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/archives/"><i class="anzhiyufont anzhiyu-icon-box-archive faa-tada"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags faa-tada"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/booklist/"><i class="anzhiyufont anzhiyu-icon-book faa-tada"></i><span> 书单</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/about/"><i class="anzhiyufont anzhiyu-icon-paper-plane faa-tada"></i><span> 关于</span></a></div></div></div><div id="nav-right"><div class="nav-button" id="randomPost_button"><a class="site-page" onclick="toRandomPost()" title="随机前往一个文章" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-dice"></i></a></div><input id="center-console" type="checkbox"/><div class="nav-button" id="nav-totop"><a class="totopbtn" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i><span id="percent" onclick="anzhiyu.scrollToDest(0,500)">0</span></a></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);" title="切换"><i class="anzhiyufont anzhiyu-icon-bars"></i></a></div></div></div></nav><div id="post-info"><div id="post-firstinfo"><div class="meta-firstline"><a class="post-meta-original">原创</a><span class="post-meta-categories"><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-inbox post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84/" itemprop="url">系统架构</a></span><span class="article-meta tags"><a class="article-meta__tags" href="/tags/%E7%BC%96%E7%A8%8B%E5%8E%9F%E7%90%86/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>编程原理</span></a><a class="article-meta__tags" href="/tags/golang/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>golang</span></a><a class="article-meta__tags" href="/tags/%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>系统架构</span></a><a class="article-meta__tags" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8FID/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>分布式ID</span></a></span></div></div><h1 class="post-title" itemprop="name headline">分布式ID的5种生成方式以及Go源码中的一种应用</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="anzhiyufont anzhiyu-icon-calendar-days post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" itemprop="dateCreated datePublished" datetime="2022-10-04T07:37:00.000Z" title="发表于 2022-10-04 15:37:00">2022-10-04</time><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-history post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" itemprop="dateCreated datePublished" datetime="2023-10-31T05:17:44.534Z" title="更新于 2023-10-31 13:17:44">2023-10-31</time></span></div><div class="meta-secondline"><span class="post-meta-separator"></span><span class="post-meta-wordcount"><i class="anzhiyufont anzhiyu-icon-file-word post-meta-icon" title="文章字数"></i><span class="post-meta-label" title="文章字数">字数总计:</span><span class="word-count" title="文章字数">3.6k</span><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-clock post-meta-icon" title="阅读时长"></i><span class="post-meta-label" title="阅读时长">阅读时长:</span><span>13分钟</span></span><span class="post-meta-separator"></span><span class="post-meta-pv-cv" id="" data-flag-title="分布式ID的5种生成方式以及Go源码中的一种应用"><i class="anzhiyufont anzhiyu-icon-fw-eye post-meta-icon"></i><span class="post-meta-label" title="阅读量">阅读量:</span><span id="busuanzi_value_page_pv"><i class="anzhiyufont anzhiyu-icon-spinner anzhiyu-spin"></i></span></span><span class="post-meta-separator">       </span><span class="post-meta-position" title="作者IP属地为上海"><i class="anzhiyufont anzhiyu-icon-location-dot"></i>上海</span></div></div></div><section class="main-hero-waves-area waves-area"><svg class="waves-svg" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto"><defs><path id="gentle-wave" d="M -160 44 c 30 0 58 -18 88 -18 s 58 18 88 18 s 58 -18 88 -18 s 58 18 88 18 v 44 h -352 Z"></path></defs><g class="parallax"><use href="#gentle-wave" x="48" y="0"></use><use href="#gentle-wave" x="48" y="3"></use><use href="#gentle-wave" x="48" y="5"></use><use href="#gentle-wave" x="48" y="7"></use></g></svg></section><div id="post-top-cover"><img class="nolazyload" id="post-top-bg" src="/img/2022/10/0001.png"></div></header><main id="blog-container"><div class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container" itemscope itemtype="https://blog.ivansli.com/2022/10/04/5-ways-generate-distributed-unique-id/"><header><a class="post-meta-categories" href="/categories/%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84/" itemprop="url">系统架构</a><a href="/tags/%E7%BC%96%E7%A8%8B%E5%8E%9F%E7%90%86/" tabindex="-1" itemprop="url">编程原理</a><a href="/tags/golang/" tabindex="-1" itemprop="url">golang</a><a href="/tags/%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84/" tabindex="-1" itemprop="url">系统架构</a><a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8FID/" tabindex="-1" itemprop="url">分布式ID</a><h1 id="CrawlerTitle" itemprop="name headline">分布式ID的5种生成方式以及Go源码中的一种应用</h1><span itemprop="author" itemscope itemtype="http://schema.org/Person">ivansli</span><time itemprop="dateCreated datePublished" datetime="2022-10-04T07:37:00.000Z" title="发表于 2022-10-04 15:37:00">2022-10-04</time><time itemprop="dateCreated datePublished" datetime="2023-10-31T05:17:44.534Z" title="更新于 2023-10-31 13:17:44">2023-10-31</time></header><h2 id="关于分布式ID"><a href="#关于分布式ID" class="headerlink" title="关于分布式ID"></a>关于分布式ID</h2><p>从目前互联网的系统架构来看，大部分公司为了避免服务节点出现单点故障、保持高可用、高性能等特性，在部署服务时都会部署多个节点，每个节点承担整个服务的一部分请求。对于同一服务多个节点中的每个节点来说，提供的功能相同。节点在处理数据的过程中会根据不同的业务场景，操作相同或不同的数据源。</p>
+<p>对于操作相同的数据源，则会形成数据竞争（大部分情况下需要加锁、串行执行）。对于操作不同的数据源，则可以并行&#x2F;并发处理（无需加锁）。</p>
+<p>对于某些场景下的数据资源，需要有全局唯一的数据资源标识。例如：电商系统中的订单ID号、聊天群组中的消息ID号、上传文件到存储系统中之后生成的文件ID号、用户注册系统中的用户ID号、商户系统中的商户ID号、开放平台中的开发者账号ID等等场景。</p>
+<p>这些ID号在分布式系统架构中，可以统称为分布式ID。</p>
+<h2 id="常见的5种分布式ID生成方式"><a href="#常见的5种分布式ID生成方式" class="headerlink" title="常见的5种分布式ID生成方式"></a>常见的5种分布式ID生成方式</h2><p>按照是否需要协调（co-ordination）节点，生成分布式ID的方法可以分为2大类：</p>
+<ol>
+<li>不需要联网，单服务节点可以在本地生成</li>
+<li>需要联网，依赖协调节点生成</li>
+</ol>
+<p>这2大类中又可以细分出来多种具体的实现方式，汇总如下图所示：</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2022/10/0001.png">
+<center>图片来自：blog.bytebytego.com</center>
+
+
+<h3 id="UUID"><a href="#UUID" class="headerlink" title="UUID"></a>UUID</h3><p>维基百科：通用唯一识别码（Universally Unique Identifier，UUID）用于计算机体系中以识别信息的一个128位标识符。</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E9%80%9A%E7%94%A8%E5%94%AF%E4%B8%80%E8%AF%86%E5%88%AB%E7%A0%81">https://zh.wikipedia.org/wiki/%E9%80%9A%E7%94%A8%E5%94%AF%E4%B8%80%E8%AF%86%E5%88%AB%E7%A0%81</a></p>
+</blockquote>
+<p>UUID 是由一个16进制下的32位数所构成，故UUID理论上的总数为16<sup>32</sup> &#x3D; 2<sup>128</sup>，约等于 3.4x10<sup>38</sup>。就是说若每纳秒（ns）产生1万亿个UUID，要花100亿年才会将所有UUID用完。</p>
+<blockquote>
+<p>在大约100年内每秒生成10亿个UUID后，创建单个重复的概率将达到50%</p>
+</blockquote>
+<p>UUID的标准型式包含32个16进制数字，以连字号分为五段，形式为 8-4-4-4-12 的32个字符。<br>格式：<code>xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx</code><br>示例：<code>550e8400-e29b-41d4-a716-446655440000</code></p>
+<p>四位数字 <code>M</code> 表示 UUID 版本，数字 <code>N</code> 的一至三个最高有效位表示 UUID 变体。</p>
+<p>标准中定义了五个版本（versions），并且在特定用例中每个版本可能比其他版本更合适（版本由<code>M</code>指示）。</p>
+<p>版本1 - UUID 是根据时间和 节点ID（通常是MAC地址）生成；<br>版本2 - UUID是根据标识符（通常是组或用户ID）、时间和节点ID生成；<br>版本3、版本5 - 确定性UUID 通过散列（hashing）名字空间（namespace）标识符和名称生成；<br>版本4 - UUID 使用随机性或伪随机性生成。</p>
+<p>以<code>版本4</code>为例，其UUID所有值的空间为 5.3x10<sup>36</sup>：<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2022/10/0002.png"></p>
+<p>这个值空间有多大呢？<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2022/10/0003.png"><br>如果从宇宙诞生开始每秒生成一个UUID，则到现在大约共有 1.1x10<sup>19</sup>。</p>
+<p>特点：</p>
+<ul>
+<li>128 bit</li>
+<li>生成简单，单节点就可以生成，不依赖协调节点</li>
+<li>IDs 是非数字</li>
+<li>IDs 不会随着时间推移增长</li>
+</ul>
+<p>UUID 的变体 ULID（通用唯一词典分类标识符）被视为是一种UUID的替代解决方案。</p>
+<h3 id="Twitter-snowflake"><a href="#Twitter-snowflake" class="headerlink" title="Twitter snowflake"></a>Twitter snowflake</h3><p>根据不同的定义，把ID的不同bit位划分为不同的段。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2022/10/0004.png">
+
+<ul>
+<li><p>1 bit 保留位</p>
+</li>
+<li><p>41 bit 时间戳，表示了自选定的时期以来的毫秒数，2^<sup>41</sup>-1&#x3D;2199023255551毫秒</p>
+<blockquote>
+<p>2199023255551 ms&#x2F;1000 seconds&#x2F;365 days&#x2F; 24 hours&#x2F;3600 seconds，大于可以工作69年。<br>69年之后（有多少公司能存活69年？），需要新的算法或者技术来处理ID</p>
+</blockquote>
+</li>
+<li><p>5 bit 数据中心ID，共可容纳 32 个数据中心</p>
+</li>
+<li><p>5 bit 机器ID，共可容纳 32 个机器ID</p>
+<blockquote>
+<p>数据中心ID+机器ID 如果设置有问题，可能会导致最终生成的ID冲突。一般可以通过环境变量进行设置</p>
+</blockquote>
+</li>
+<li><p>12 bit 数字序列号，共有4096种组合。序列号通过进程&#x2F;机器内部自增1得到，每毫秒重置为0。除非同一毫秒内有多个ID生成，否则为0。</p>
+<blockquote>
+<p>一台机器上每毫秒最多生成4096个新的ID</p>
+</blockquote>
+</li>
+</ul>
+<p>特点：</p>
+<ul>
+<li>64 bit</li>
+<li>ID的bit位根据不同含义，划分为5个段</li>
+<li>生成简单，单节点就可以生成，不依赖协调节点</li>
+<li>可以是数字（一般是数字），也可以转换为16进制的非数字字符串</li>
+</ul>
+<p>从目前来看，市面上不同的公司、不同的编程语言都有参考 snowflake 来开发出相同或相近的实现。有些实现甚至为了获得更大的数值域空间，把64bit扩充为128bit。</p>
+<h3 id="Database-auto-increment"><a href="#Database-auto-increment" class="headerlink" title="Database auto-increment"></a>Database auto-increment</h3><p>数据库主键具有天然的自增特性，每次对数据进行操作主键都会自增。但是，由于数据库会频繁的读取操作磁盘数据，所以性能受限于磁盘的I&#x2F;O。并且，大部分情况下如果数据库是单点的话也存在单点故障问题。因此，也会有基于数据库自增的优化版方案，使用多个数据库节点，每个数据库节点的自增步长不同。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2022/10/0005.png">
+
+<p>特点：</p>
+<ul>
+<li>主键单调递增</li>
+<li>生成性能受限于磁盘I&#x2F;O</li>
+<li>当添加&#x2F;删除数据库服务器节点时，无法很好的进行扩展</li>
+<li>ID纯数字</li>
+</ul>
+<h3 id="Redis-increment"><a href="#Redis-increment" class="headerlink" title="Redis increment"></a>Redis increment</h3><p>Redis属于内存型数据库，除了数据可以持久化之外，最大的特点是数据操作都在内存中执行，读写性能非常高。并且在数据的操作中有 INCR 命令，可以进行自增操作。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2022/10/0007.png">
+
+<p>特点：</p>
+<ul>
+<li>相比数据库来说，延迟低</li>
+<li>需要额外的中间件</li>
+<li>ID纯数字</li>
+</ul>
+<h3 id="Database-segment"><a href="#Database-segment" class="headerlink" title="Database segment"></a>Database segment</h3><p>众所周知，跨进程的数据操作会有大量的时间花费在网络传输、I&#x2F;O操作上，非跨进程的本地内部操作效率最高。那么，Database segment便是基于此种思想的一种实现方式。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2022/10/0006.png">
+
+<p>特点：</p>
+<ul>
+<li>使用数据库为多个服务器节点保存全局ID数值(数据库也可替换为Redis或其他中间件)</li>
+<li>无需多次请求外部中间件，减少网络传输、I&#x2F;O操作时间消耗</li>
+<li>充分利用进程本地操作的高效性</li>
+<li>ID纯数字</li>
+<li>主流实现方式之一</li>
+</ul>
+<p>一般使用方式：</p>
+<ul>
+<li>程序在启动之后，去数据库申请一段数值空间（在原有基础上获取一段），获得之后缓存在程序内部某全局变量中。</li>
+<li>进程内为需要的业务根据规则分配一个数值空间中的数值，当数值空间消耗完后，再次申请一段新的数值空间。<blockquote>
+<p>思考：某种情况下，整个数值空间会存在空洞。为什么？</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="生成布式ID的一些限制"><a href="#生成布式ID的一些限制" class="headerlink" title="生成布式ID的一些限制"></a>生成布式ID的一些限制</h2><p>在不同的场景下，对于分布式ID也会存在一些特有的限制，例如：订单ID只能是数字、文件ID可以是字符串等。</p>
+<p>在设计分布式ID的生成规则以及技术方案选型时，可能需要思考是否具备以下方面：</p>
+<ol>
+<li>是否ID必须全局唯一</li>
+<li>是否ID只能是数字</li>
+<li>是否ID必须是 64 bit</li>
+<li>是否ID根据时间有序</li>
+<li>是否ID每秒钟必须生成数量达到某个量级</li>
+<li>是否ID需要针对安全性做一些特殊处理（例如：不能通过ID推测出今天的订单数量）</li>
+</ol>
+<p>不同的场景，可以选择不同的实现方式或者对多种实现方式进行组合。总之，适合的才是最好的。</p>
+<h2 id="Go源码中-goid-的生成原理"><a href="#Go源码中-goid-的生成原理" class="headerlink" title="Go源码中 goid 的生成原理"></a>Go源码中 goid 的生成原理</h2><p>对于阅读过go内核源码或者熟知GMP模型的人来说，可能都会知道每个goroutine都会存在一个不可导出的字段goid，用来标识当前goroutine这个资源。goid的生成原理又是怎么样的呢？一起通过源码来追溯一下吧。</p>
+<blockquote>
+<p>对于GMP模型的原理以及交互逻辑，这里不再进行讲解，可以查阅相关资料。</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> runtime</span><br><span class="line"><span class="comment">// 源码位置：src/runtime/runtime2.go</span></span><br><span class="line"><span class="comment">// 仅仅列出此次需要的字段以及代码，其他省略</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> (</span><br><span class="line">    sched  schedt <span class="comment">// 用于存储go运行时调度器的全局信息</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> schedt <span class="keyword">struct</span> &#123;</span><br><span class="line">    <span class="comment">// accessed atomically. keep at top to ensure alignment on 32-bit systems. </span></span><br><span class="line">    <span class="comment">// 存储全局的已经分配出去的用于标识goroutine id的数值 </span></span><br><span class="line">    <span class="comment">// 思考：下面字段为什么是 uint64 </span></span><br><span class="line">    goidgen  <span class="type">uint64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// GMP模型中的G</span></span><br><span class="line"><span class="keyword">type</span> g <span class="keyword">struct</span> &#123;</span><br><span class="line">    goid <span class="type">int64</span>   <span class="comment">// 每个goroutine的id标识，这里的类型是 int64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// GMP模型中的M</span></span><br><span class="line"><span class="keyword">type</span> m <span class="keyword">struct</span> &#123;</span><br><span class="line">    g0  *g     <span class="comment">// goroutine with scheduling stack</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// GMP模型中的P</span></span><br><span class="line"><span class="comment">// 在某个goroutine中调用`go`关键字生成新的goroutine时，都会优先选择把新生成的goroutine存放到当前P的本地队列中</span></span><br><span class="line"><span class="comment">// 当前P不仅</span></span><br><span class="line"><span class="keyword">type</span> p <span class="keyword">struct</span> &#123; </span><br><span class="line">    <span class="comment">// Cache of goroutine ids, amortizes accesses to runtime·sched.goidgen. </span></span><br><span class="line">    <span class="comment">// 思考：下面2个字段为什么是 uint64</span></span><br><span class="line">    goidcache    <span class="type">uint64</span> <span class="comment">// 已经使用的数值</span></span><br><span class="line">    goidcacheend <span class="type">uint64</span> <span class="comment">// 当前批量申请的id的最大值。与goidcache相等时，则表示耗尽了，需要重新申请 </span></span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">    <span class="comment">// Queue of runnable goroutines. Accessed without lock.</span></span><br><span class="line">    runqhead <span class="type">uint32</span></span><br><span class="line">    runqtail <span class="type">uint32</span></span><br><span class="line">    runq     [<span class="number">256</span>]guintptr </span><br><span class="line">    <span class="comment">// runnext, if non-nil, is a runnable G that was ready&#x27;d by</span></span><br><span class="line">    <span class="comment">// the current G and should be run next instead of what&#x27;s in</span></span><br><span class="line">    <span class="comment">// runq if there&#x27;s time remaining in the running G&#x27;s time</span></span><br><span class="line">    <span class="comment">// slice. It will inherit the time left in the current time</span></span><br><span class="line">    <span class="comment">// slice. If a set of goroutines is locked in a</span></span><br><span class="line">    <span class="comment">// communicate-and-wait pattern, this schedules that set as a</span></span><br><span class="line">    <span class="comment">// unit and eliminates the (potentially large) scheduling</span></span><br><span class="line">    <span class="comment">// latency that otherwise arises from adding the ready&#x27;d</span></span><br><span class="line">    <span class="comment">// goroutines to the end of the run queue.</span></span><br><span class="line">    runnext guintptr </span><br><span class="line">	</span><br><span class="line">    <span class="comment">// Available G&#x27;s (status == Gdead)</span></span><br><span class="line">    gFree <span class="keyword">struct</span> &#123;</span><br><span class="line">        gList</span><br><span class="line">        n <span class="type">int32</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在go代码中每次调用 <code>go func()&#123;&#125;</code> 类似的代码时，都会生成（或者复用空闲的）goroutine。</p>
+<p>通过如下示例代码来进行验证：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="string">&quot;time&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;&#125;()</span><br><span class="line"></span><br><span class="line">	time.Sleep(<span class="number">1</span> * time.Second)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行 <code>go build -gcflags=&quot;-N -l -S&quot;</code> 得到如下汇编：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">main.main.func1 STEXT nosplit size=<span class="number">1</span> args=<span class="number">0x0</span> locals=<span class="number">0x0</span> funcid=<span class="number">0x0</span> align=<span class="number">0x0</span></span><br><span class="line">        <span class="number">0x0000</span> <span class="number">00000</span> (/Users/ivanli/code/demo/main.<span class="keyword">go</span>:<span class="number">6</span>)        TEXT    main.main.func1(SB), NOSPLIT|ABIInternal, $<span class="number">0</span><span class="number">-0</span></span><br><span class="line">        <span class="number">0x0000</span> <span class="number">00000</span> (/Users/ivanli/code/demo/main.<span class="keyword">go</span>:<span class="number">6</span>)        FUNCDATA        $<span class="number">0</span>, gclocals·g2BeySu+wFnoycgXfElmcg==(SB)</span><br><span class="line">        <span class="number">0x0000</span> <span class="number">00000</span> (/Users/ivanli/code/demo/main.<span class="keyword">go</span>:<span class="number">6</span>)        FUNCDATA        $<span class="number">1</span>, gclocals·g2BeySu+wFnoycgXfElmcg==(SB)</span><br><span class="line">        <span class="number">0x0000</span> <span class="number">00000</span> (/Users/ivanli/code/demo/main.<span class="keyword">go</span>:<span class="number">6</span>)        RET</span><br><span class="line">        <span class="number">0x0000</span> c3 </span><br><span class="line">        </span><br><span class="line">main.main STEXT size=<span class="number">66</span> args=<span class="number">0x0</span> locals=<span class="number">0x10</span> funcid=<span class="number">0x0</span> align=<span class="number">0x0</span></span><br><span class="line">        ...</span><br><span class="line">        <span class="number">0x0014</span> <span class="number">00020</span> (/Users/ivanli/code/demo/main.<span class="keyword">go</span>:<span class="number">6</span>)        LEAQ    main.main.func1·f(SB), AX</span><br><span class="line">        <span class="number">0x0020</span> <span class="number">00032</span> (/Users/ivanli/code/demo/main.<span class="keyword">go</span>:<span class="number">6</span>)        CALL    runtime.newproc(SB)</span><br><span class="line">        ...</span><br></pre></td></tr></table></figure>
+<p>由汇编<code>CALL runtime.newproc(SB)</code>可知：使用 go 关键字的确会调用 runtime 的 newproc 方法来生成 goroutine。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> runtime</span><br><span class="line"></span><br><span class="line"><span class="comment">// 源码位置：src/runtime/proc.go</span></span><br><span class="line"><span class="comment">// 仅仅列出此次需要的字段以及代码，其他省略</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> (</span><br><span class="line">    <span class="comment">// Number of goroutine ids to grab from sched.goidgen to local per-P cache at once.</span></span><br><span class="line">    <span class="comment">// 16 seems to provide enough amortization, but other than that it&#x27;s mostly arbitrary number.</span></span><br><span class="line">    _GoidCacheBatch = <span class="number">16</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newproc</span><span class="params">(siz <span class="type">int32</span>, fn *funcval)</span></span> &#123;</span><br><span class="line">    argp := add(unsafe.Pointer(&amp;fn), sys.PtrSize)</span><br><span class="line">    gp := getg()</span><br><span class="line">    pc := getcallerpc()</span><br><span class="line"></span><br><span class="line">    <span class="comment">// systemstack 的声明代码位置：src/runtime/stubs.go</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// systemstack runs fn on a system stack.</span></span><br><span class="line">    <span class="comment">// If systemstack is called from the per-OS-thread (g0) stack, or</span></span><br><span class="line">    <span class="comment">// if systemstack is called from the signal handling (gsignal) stack,</span></span><br><span class="line">    <span class="comment">// systemstack calls fn directly and returns.</span></span><br><span class="line">    <span class="comment">// Otherwise, systemstack is being called from the limited stack</span></span><br><span class="line">    <span class="comment">// of an ordinary goroutine. In this case, systemstack switches</span></span><br><span class="line">    <span class="comment">// to the per-OS-thread stack, calls fn, and switches back.</span></span><br><span class="line">    <span class="comment">// It is common to use a func literal as the argument, in order</span></span><br><span class="line">    <span class="comment">// to share inputs and outputs with the code around the call</span></span><br><span class="line">    <span class="comment">// to system stack:</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">//	... set up y ...</span></span><br><span class="line">    <span class="comment">//	systemstack(func() &#123;</span></span><br><span class="line">    <span class="comment">//		x = bigcall(y)</span></span><br><span class="line">    <span class="comment">//	&#125;)</span></span><br><span class="line">    <span class="comment">//	... use x ...</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">//go:noescape</span></span><br><span class="line">    <span class="comment">//func systemstack(fn func())</span></span><br><span class="line">  </span><br><span class="line">    <span class="comment">// systemstack() 在系统栈执行 newproc1() </span></span><br><span class="line">    systemstack(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">        newproc1(fn, (*<span class="type">uint8</span>)(argp), siz, gp, pc)</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 具体的生成逻辑在这里</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newproc1</span><span class="params">(fn *funcval, argp *<span class="type">uint8</span>, narg <span class="type">int32</span>, callergp *g, callerpc <span class="type">uintptr</span>)</span></span> &#123;</span><br><span class="line">  _g_ := getg() </span><br><span class="line">  <span class="comment">// 获取当前G所绑定的P</span></span><br><span class="line">  _p_ := _g_.m.p.ptr()</span><br><span class="line">  <span class="comment">// 通过P生成一个新的G</span></span><br><span class="line">  newg := gfget(_p_)</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ...... omit other code</span></span><br><span class="line">  </span><br><span class="line">  <span class="comment">// P 中存储着一段在 sched.goidgen 申请的用于分配给goroutine的id数值域</span></span><br><span class="line">  <span class="comment">// 每次批量申请 _GoidCacheBatch 个id</span></span><br><span class="line">  <span class="comment">// 如果已经耗尽，则重新申请一批</span></span><br><span class="line">  <span class="keyword">if</span> _p_.goidcache == _p_.goidcacheend &#123;</span><br><span class="line">        <span class="comment">// Sched.goidgen is the last allocated id,</span></span><br><span class="line">        <span class="comment">// this batch must be [sched.goidgen+1, sched.goidgen+GoidCacheBatch].</span></span><br><span class="line">        <span class="comment">// At startup sched.goidgen=0, so main goroutine receives goid=1.</span></span><br><span class="line">        <span class="comment">//</span></span><br><span class="line">        <span class="comment">// 通过原子操作，在 sched.goidgen 中批量获取一段新的数值域，赋值给当前P </span></span><br><span class="line">        _p_.goidcache = atomic.Xadd64(&amp;sched.goidgen, _GoidCacheBatch)</span><br><span class="line">        <span class="comment">// _p_.goidcache = _p_.goidcache - (_GoidCacheBatch - 1)</span></span><br><span class="line">        _p_.goidcache -= _GoidCacheBatch - <span class="number">1</span></span><br><span class="line">        _p_.goidcacheend = _p_.goidcache + _GoidCacheBatch</span><br><span class="line">		</span><br><span class="line">        <span class="comment">// 这一行为添加的用于调试的代码，非官方源码</span></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;\n&quot;</span>, <span class="string">&quot;_p_.id:&quot;</span>, _p_.id,<span class="string">&quot; goidcache:&quot;</span>,_p_.goidcache, <span class="string">&quot; goidcacheend:&quot;</span>, _p_.goidcacheend, <span class="string">&quot;\n&quot;</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 新生成的goroutine的goid值，这里发生了类型转换</span></span><br><span class="line">    newg.goid = <span class="type">int64</span>(_p_.goidcache)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 这一行为添加的用于调试的代码，非官方源码</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;_p_.id:&quot;</span>, _p_.id, <span class="string">&quot; newg.goid:&quot;</span>, newg.goid, <span class="string">&quot;\n&quot;</span>)</span><br><span class="line">    _p_.goidcache++</span><br><span class="line">	</span><br><span class="line">    <span class="comment">// ...... omit other code</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过 goland 在 <code>External Libraries</code> 中找到 <code>runtime/proc.go</code> 文件，在 <code>newproc1()</code> 方法中添加两行调试代码，打印 P 每次获取的数值域以及每个新生成goroutine获得的id值。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2022/10/0010.png">
+
+
+<p>简单的示例代码：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="string">&quot;fmt&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	fmt.Println(<span class="string">&quot;\nuser go code main&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行示例代码，得到打印结果如下所示：<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2022/10/0009.png"></p>
+<p>通过示例看到分别给 P0、P1 分配一次id（每次批量获取16个id），P0、P1获得的id值域如下所示：</p>
+<table>
+<thead>
+<tr>
+<th>GMP\goidgen分配次数</th>
+<th>未分配</th>
+<th>第一次分配</th>
+<th>第二次分配</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>sched.goidgen</td>
+<td>0</td>
+<td>0 -&gt; 16</td>
+<td>16 -&gt; 32</td>
+</tr>
+<tr>
+<td>P0 [goidcache,goidcacheend)</td>
+<td>[0,0)</td>
+<td>[1,17)</td>
+<td>-</td>
+</tr>
+<tr>
+<td>P1 [goidcache,goidcacheend)</td>
+<td>[0,0)</td>
+<td>-</td>
+<td>[17,33)</td>
+</tr>
+</tbody></table>
+<p>由表可以看出 P 的值域符合公式：<code>[sched.goidgen+1, sched.goidgen+GoidCacheBatch]</code>，且值域为左闭右开区间。</p>
+<p>因此可知：初始状态 sched.goidgen 等于0，所以 main goroutine 的 goid 等于1。</p>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2022/10/0008.png">
+
+<p>仔细回想讨论过的5种分布式ID生成方法，如果把<code>sched.goidgen</code>比作<code>DB</code>、<code>P</code>比作<code>process</code>、<code>G</code>比作<code>service</code>。那么，goid的生成逻辑是不是与<code>Database segment</code>的方式非常相似呢？</p>
+<h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2><ol>
+<li><a target="_blank" rel="noopener" href="https://www.slideshare.net/davegardnerisme/unique-id-generation-in-distributed-systems">https://www.slideshare.net/davegardnerisme/unique-id-generation-in-distributed-systems</a>  Unique ID generation in distributed systems</li>
+<li><a target="_blank" rel="noopener" href="https://towardsdatascience.com/ace-the-system-design-interview-distributed-id-generator-c65c6b568027">https://towardsdatascience.com/ace-the-system-design-interview-distributed-id-generator-c65c6b568027</a> Distributed ID Generator</li>
+<li><a target="_blank" rel="noopener" href="https://blog.bytebytego.com/p/ep24-environment-friendly-languages">https://blog.bytebytego.com/p/ep24-environment-friendly-languages</a> Five ways to generate distributed unique ID</li>
+</ol>
+</article><div class="post-copyright"><div class="copyright-cc-box"><i class="anzhiyufont anzhiyu-icon-copyright"></i></div><div class="post-copyright__author_box"><a class="post-copyright__author_img" href="/" title="头像"><img class="post-copyright__author_img_back" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/xiaowangzi.jpg" title="头像" alt="头像"><img class="post-copyright__author_img_front" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/xiaowangzi.jpg" title="头像" alt="头像"></a><div class="post-copyright__author_name">ivansli</div><div class="post-copyright__author_desc">学无止境</div></div><div class="post-copyright__post__info"><a class="post-copyright__original" title="该文章为原创文章，注意版权协议" href="https://blog.ivansli.com/2022/10/04/5-ways-generate-distributed-unique-id/">原创</a><a class="post-copyright-title"><span onclick="rm.copyPageUrl('https://blog.ivansli.com/2022/10/04/5-ways-generate-distributed-unique-id/')">分布式ID的5种生成方式以及Go源码中的一种应用</span></a></div><div class="post-tools" id="post-tools"><div class="post-tools-left"><div class="rewardLeftButton"><div class="post-reward" onclick="anzhiyu.addRewardMask()"><div class="reward-button button--animated" title="赞赏作者"><i class="anzhiyufont anzhiyu-icon-hand-heart-fill"></i>打赏作者</div><div class="reward-main"><div class="reward-all"><!--span.reward-title 感谢你赐予我前进的力量--><ul class="reward-group"><li class="reward-item"><a href="/img/reward/wechat-small.png" target="_blank"><img class="post-qr-code-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/reward/wechat-small.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/reward/alipay-small.png" target="_blank"><img class="post-qr-code-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/reward/alipay-small.png" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul><!--a.reward-main-btn(href='/about/#about-reward' target='_blank')//.reward-text 赞赏者名单
+//.reward-dec 因为你们的支持让我意识到写文章的价值🙏--></div></div></div><div id="quit-box" onclick="anzhiyu.removeRewardMask()" style="display: none"></div></div><div class="shareRight"><div class="share-link mobile"><div class="share-qrcode"><div class="share-button" title="使用手机访问这篇文章"><i class="anzhiyufont anzhiyu-icon-qrcode"></i></div><div class="share-main"><div class="share-main-all"><div id="qrcode" title="https://blog.ivansli.com/2022/10/04/5-ways-generate-distributed-unique-id/"></div><div class="reward-dec">使用手机访问这篇文章</div></div></div></div></div><div class="share-link weibo"><a class="share-button" target="_blank" href="https://service.weibo.com/share/share.php?title=分布式ID的5种生成方式以及Go源码中的一种应用&amp;url=https://blog.ivansli.com/2022/10/04/5-ways-generate-distributed-unique-id/&amp;pic=/img/2022/10/0001.png" rel="external nofollow noreferrer noopener"><i class="anzhiyufont anzhiyu-icon-weibo"></i></a></div><div class="share-link copyurl"><div class="share-button" id="post-share-url" title="复制链接" onclick="rm.copyPageUrl()"><i class="anzhiyufont anzhiyu-icon-link"></i></div></div></div></div></div><div class="post-copyright__notice"><span class="post-copyright-info">本文系原创作品，版权所有（禁止转载）</span></div></div><div class="post-tools-right"><div class="tag_share"><div class="post-meta__box"><div class="post-meta__box__tag-list"><a class="post-meta__box__tags" href="/tags/%E7%BC%96%E7%A8%8B%E5%8E%9F%E7%90%86/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>编程原理<span class="tagsPageCount">31</span></a><a class="post-meta__box__tags" href="/tags/golang/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>golang<span class="tagsPageCount">31</span></a><a class="post-meta__box__tags" href="/tags/%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>系统架构<span class="tagsPageCount">5</span></a><a class="post-meta__box__tags" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8FID/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>分布式ID<span class="tagsPageCount">1</span></a></div></div></div><div class="post_share"><div class="social-share" data-image="/img/2024/07/helm.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="/pluginsSrc/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"/><script src="/pluginsSrc/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer="defer"></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2022/08/07/grpc-conflict/"><img class="prev-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2022/08/1392790189.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">Protobuf Name Conflict 分析与解决</div></div></a></div><div class="next-post pull-right"><a href="/2022/10/22/apple-giftcard/"><img class="next-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2022/10/0022.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">通过礼品卡购买美区AppleID付费App</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="anzhiyufont anzhiyu-icon-thumbs-up fa-fw" style="font-size: 1.5rem; margin-right: 4px"></i><span>喜欢这篇文章的人也看了</span></div><div class="relatedPosts-list"><div><a href="/2021/11/20/algo-python-vietnam-money/" title="数字转越南语词组实现方法"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/space-man-small.png" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2021-11-20</div><div class="title">数字转越南语词组实现方法</div></div></a></div><div><a href="/2021/01/17/go-1-2/" title="从Go的1-2不等于-1聊起"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/space-man-small.png" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2021-01-17</div><div class="title">从Go的1-2不等于-1聊起</div></div></a></div><div><a href="/2020/10/12/go-asm-plan9/" title="初识Golang汇编"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2021/11/134490072.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2020-10-12</div><div class="title">初识Golang汇编</div></div></a></div><div><a href="/2021/01/16/go-atomic/" title="Go中sync&#x2F;atomic原子操作分析"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/space-man-small.png" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2021-01-16</div><div class="title">Go中sync&#x2F;atomic原子操作分析</div></div></a></div><div><a href="/2021/08/14/go-build-register/" title="go build 时注入编译信息"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/space-man-small.png" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2021-08-14</div><div class="title">go build 时注入编译信息</div></div></a></div><div><a href="/2022/03/10/go-build-tag/" title="Go 构建约束的使用方式"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/space-man-small.png" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2022-03-10</div><div class="title">Go 构建约束的使用方式</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="card-content"><div class="author-info__sayhi" id="author-info__sayhi" onclick="anzhiyu.changeSayHelloText()"></div><div class="author-info-avatar"><img class="avatar-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/xiaowangzi.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/><div class="author-status"><img class="g-status" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/goutou.png" ait="status"/></div></div><div class="author-info__description"><div style="line-height:1.38;margin:0.6rem 0;text-align:justify;color:rgba(255, 255, 255, 0.8);">这里有<b style="color:#fff">知识总结</b>和<b style="color:#fff">技术分享</b>。书山有路勤为径，学海无涯苦作舟。<b style="color:#fff">此生也有涯</b>，<b style="color:#fff">此生学无涯</b>。</div></div><div class="author-info__bottom-group"><a class="author-info__bottom-group-left" href="/"><h1 class="author-info__name">ivansli</h1><div class="author-info__desc">学无止境</div></a><div class="card-info-social-icons is-center"><a class="social-icon faa-parent animated-hover" href="https://github.com/coderstart" target="_blank" title="Github"><i class="anzhiyufont anzhiyu-icon-github"></i></a></div></div></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-bars"></i><span>文章目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E4%BA%8E%E5%88%86%E5%B8%83%E5%BC%8FID"><span class="toc-number">1.</span> <span class="toc-text">关于分布式ID</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B8%B8%E8%A7%81%E7%9A%845%E7%A7%8D%E5%88%86%E5%B8%83%E5%BC%8FID%E7%94%9F%E6%88%90%E6%96%B9%E5%BC%8F"><span class="toc-number">2.</span> <span class="toc-text">常见的5种分布式ID生成方式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#UUID"><span class="toc-number">2.1.</span> <span class="toc-text">UUID</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Twitter-snowflake"><span class="toc-number">2.2.</span> <span class="toc-text">Twitter snowflake</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Database-auto-increment"><span class="toc-number">2.3.</span> <span class="toc-text">Database auto-increment</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Redis-increment"><span class="toc-number">2.4.</span> <span class="toc-text">Redis increment</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Database-segment"><span class="toc-number">2.5.</span> <span class="toc-text">Database segment</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%9F%E6%88%90%E5%B8%83%E5%BC%8FID%E7%9A%84%E4%B8%80%E4%BA%9B%E9%99%90%E5%88%B6"><span class="toc-number">3.</span> <span class="toc-text">生成布式ID的一些限制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Go%E6%BA%90%E7%A0%81%E4%B8%AD-goid-%E7%9A%84%E7%94%9F%E6%88%90%E5%8E%9F%E7%90%86"><span class="toc-number">4.</span> <span class="toc-text">Go源码中 goid 的生成原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#References"><span class="toc-number">5.</span> <span class="toc-text">References</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-history"></i><span>最近发布</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2024/07/07/240707-helm/" title="helm安装、使用及其运行原理"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2024/07/helm.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="helm安装、使用及其运行原理"/></a><div class="content"><a class="title" href="/2024/07/07/240707-helm/" title="helm安装、使用及其运行原理">helm安装、使用及其运行原理</a><time datetime="2024-07-07T01:00:00.000Z" title="发表于 2024-07-07 09:00:00">2024-07-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2023/11/11/theroadtoserfdom/" title="读：哈耶克《到奴役之路》有感"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2023/11/hayeke.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="读：哈耶克《到奴役之路》有感"/></a><div class="content"><a class="title" href="/2023/11/11/theroadtoserfdom/" title="读：哈耶克《到奴役之路》有感">读：哈耶克《到奴役之路》有感</a><time datetime="2023-11-11T01:44:00.000Z" title="发表于 2023-11-11 09:44:00">2023-11-11</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2023/10/07/231007-game-theory3/" title="二人零和博弈与最大最小定理"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2023/09/gametheory-01.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="二人零和博弈与最大最小定理"/></a><div class="content"><a class="title" href="/2023/10/07/231007-game-theory3/" title="二人零和博弈与最大最小定理">二人零和博弈与最大最小定理</a><time datetime="2023-10-07T08:45:00.000Z" title="发表于 2023-10-07 16:45:00">2023-10-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2023/10/07/231007-game-theory2/" title="博弈论对一般问题的建模分析"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2023/09/gametheory-01.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="博弈论对一般问题的建模分析"/></a><div class="content"><a class="title" href="/2023/10/07/231007-game-theory2/" title="博弈论对一般问题的建模分析">博弈论对一般问题的建模分析</a><time datetime="2023-10-07T03:40:00.000Z" title="发表于 2023-10-07 11:40:00">2023-10-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2023/09/18/230918-game-theory/" title="认识博弈论"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2023/09/gametheory-01.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="认识博弈论"/></a><div class="content"><a class="title" href="/2023/09/18/230918-game-theory/" title="认识博弈论">认识博弈论</a><time datetime="2023-09-18T10:00:00.000Z" title="发表于 2023-09-18 18:00:00">2023-09-18</time></div></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><!-- - let centerImg = theme.footer.socialBar.centerImg ? theme.footer.socialBar.centerImg : theme.avatar.img--><div id="footer_deal"><!-- 左侧图标--><a class="deal_link" href="mailto:gopher001@outlook.com" title="email"><i class="anzhiyufont anzhiyu-icon-envelope"></i></a><!--个人头像图标--><!--img.footer_mini_logo(title="返回顶部", alt="返回顶部" onclick="anzhiyu.scrollToDest(0, 500)", src=centerImg, size="50px")--><!-- 右侧图标--><a class="deal_link" target="_blank" rel="noopener" href="https://github.com/coderstart" title="Github"><i class="anzhiyufont anzhiyu-icon-github"></i></a><a class="deal_link" href="/copyright" title="CC"><i class="anzhiyufont anzhiyu-icon-copyright-line"></i></a></div><div id="anzhiyu-footer"><div class="footer-group"><div class="footer-title">导航</div><div class="footer-links"><a class="footer-item" title="文章列表" href="/archives/">文章列表</a><a class="footer-item" title="我的书单" href="/booklist/">我的书单</a><a class="footer-item" title="极客说说" href="/essay/">极客说说</a><a class="footer-item" title="关于本站" href="/about/">关于本站</a></div></div><div class="footer-group"><div class="footer-title">分类</div><div class="footer-links"><a class="footer-item" title="编程原理" href="/categories/%E7%BC%96%E7%A8%8B%E5%8E%9F%E7%90%86/">编程原理</a><a class="footer-item" title="系统架构" href="/categories/%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84/">系统架构</a><a class="footer-item" title="中间件" href="/categories/%E4%B8%AD%E9%97%B4%E4%BB%B6/">中间件</a><a class="footer-item" title="编程原理" href="/categories/%E7%BC%96%E7%A8%8B%E5%8E%9F%E7%90%86/">编程原理</a></div></div><div class="footer-group"><div class="footer-title">协议</div><div class="footer-links"><a class="footer-item" title="隐私协议" href="/privacy/">隐私协议</a><a class="footer-item" title="Cookies" href="/cookies/">Cookies</a><a class="footer-item" title="版权协议" href="/copyright/">版权协议</a></div></div><div class="footer-group"><div class="footer-title">友链</div><div class="footer-links"><a class="footer-item" title="编程导航" target="_blank" rel="noopener" href="https://tool.ivansli.com/">编程导航</a></div></div></div><p id="ghbdages"><a class="github-badge" target="_blank" style="margin-inline:5px" data-title="博客框架为Hexo" title="博客框架为Hexo"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/badge/Frame-Hexo.svg" alt="博客框架为Hexo"/></a><a class="github-badge" target="_blank" style="margin-inline:5px" data-title="本站使用AnZhiYu主题" title="本站使用AnZhiYu主题"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/badge/Theme-AnZhiYu-2E67D3.svg" alt="本站使用AnZhiYu主题"/></a><a class="github-badge" target="_blank" style="margin-inline:5px" data-title="本站采用知识共享署名-非商业性使用-相同方式共享4.0国际许可协议进行许可" title="本站采用知识共享署名-非商业性使用-相同方式共享4.0国际许可协议进行许可"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/badge/Copyright-BY-NC-SA.svg" alt="本站采用知识共享署名-非商业性使用-相同方式共享4.0国际许可协议进行许可"/></a></p></div><div id="footer-bar"><div class="footer-bar-links"><div class="footer-bar-left"><div id="footer-bar-tips"><div class="copyright">&copy;2019 - 2024 · <a class="footer-bar-link" href="/" title="ivansli" target="_blank">ivansli</a></div></div><div id="footer-type-tips"></div></div><div class="footer-bar-right"><a class="footer-bar-link" target="_blank" rel="noopener" href="http://beian.miit.gov.cn" title="沪ICP备2021031949号">沪ICP备2021031949号</a><a class="footer-bar-link" target="_blank" rel="noopener" href="https://tool.ivansli.com" title="编程导航">编程导航</a><a class="footer-bar-link cc" href="/" title="cc协议"><i class="anzhiyufont anzhiyu-icon-copyright-line"></i><i class="anzhiyufont anzhiyu-icon-creative-commons-by-line"></i><i class="anzhiyufont anzhiyu-icon-creative-commons-nc-line"></i><i class="anzhiyufont anzhiyu-icon-creative-commons-nd-line"></i></a></div></div></div></footer></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="sidebar-site-data site-data is-center"><a href="/archives/" title="archive"><div class="headline">文章</div><div class="length-num">80</div></a><a href="/tags/" title="tag"><div class="headline">标签</div><div class="length-num">37</div></a><a href="/categories/" title="category"><div class="headline">分类</div><div class="length-num">20</div></a></div><span class="sidebar-menu-item-title">功能</span><div class="sidebar-menu-item"><a class="darkmode_switchbutton menu-child" href="javascript:void(0);" title="显示模式"><i class="anzhiyufont anzhiyu-icon-circle-half-stroke"></i><span>显示模式</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/"><i class="anzhiyufont anzhiyu-icon-house-chimney faa-tada"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/archives/"><i class="anzhiyufont anzhiyu-icon-box-archive faa-tada"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags faa-tada"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/booklist/"><i class="anzhiyufont anzhiyu-icon-book faa-tada"></i><span> 书单</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/about/"><i class="anzhiyufont anzhiyu-icon-paper-plane faa-tada"></i><span> 关于</span></a></div></div><span class="sidebar-menu-item-title">标签</span><div class="card-tags"><div class="item-headline"></div><div class="card-tag-cloud"><a href="/tags/Apple/" style="font-size: 0.88rem;">Apple<sup>2</sup></a><a href="/tags/CI-CD/" style="font-size: 0.88rem;">CI/CD<sup>1</sup></a><a href="/tags/C%E8%AF%AD%E8%A8%80/" style="font-size: 0.88rem;">C语言<sup>1</sup></a><a href="/tags/Docker/" style="font-size: 0.88rem;">Docker<sup>2</sup></a><a href="/tags/IoT/" style="font-size: 0.88rem;">IoT<sup>1</sup></a><a href="/tags/Linux/" style="font-size: 0.88rem;">Linux<sup>2</sup></a><a href="/tags/MySQL/" style="font-size: 0.88rem;">MySQL<sup>5</sup></a><a href="/tags/PHP/" style="font-size: 0.88rem;">PHP<sup>1</sup></a><a href="/tags/Python/" style="font-size: 0.88rem;">Python<sup>1</sup></a><a href="/tags/Unix/" style="font-size: 0.88rem;">Unix<sup>2</sup></a><a href="/tags/ZooKeeper/" style="font-size: 0.88rem;">ZooKeeper<sup>1</sup></a><a href="/tags/crontab/" style="font-size: 0.88rem;">crontab<sup>1</sup></a><a href="/tags/git/" style="font-size: 0.88rem;">git<sup>4</sup></a><a href="/tags/gitlab/" style="font-size: 0.88rem;">gitlab<sup>1</sup></a><a href="/tags/golang/" style="font-size: 0.88rem;">golang<sup>31</sup></a><a href="/tags/grpc-go/" style="font-size: 0.88rem;">grpc-go<sup>3</sup></a><a href="/tags/k8s/" style="font-size: 0.88rem;">k8s<sup>1</sup></a><a href="/tags/redis/" style="font-size: 0.88rem;">redis<sup>6</sup></a><a href="/tags/%E4%B8%AD%E6%96%87%E7%BC%96%E7%A8%8B/" style="font-size: 0.88rem;">中文编程<sup>1</sup></a><a href="/tags/%E4%B8%AD%E9%97%B4%E4%BB%B6/" style="font-size: 0.88rem;">中间件<sup>13</sup></a><a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8FID/" style="font-size: 0.88rem;">分布式ID<sup>1</sup></a><a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" style="font-size: 0.88rem;">分布式锁<sup>1</sup></a><a href="/tags/%E5%8D%9A%E5%BC%88%E8%AE%BA/" style="font-size: 0.88rem;">博弈论<sup>3</sup></a><a href="/tags/%E5%8F%B7%E6%AE%B5%E5%8F%91%E5%8F%B7%E5%99%A8/" style="font-size: 0.88rem;">号段发号器<sup>1</sup></a><a href="/tags/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/" style="font-size: 0.88rem;">常见问题<sup>6</sup></a><a href="/tags/%E6%8C%87%E6%95%B0%E9%80%80%E9%81%BF/" style="font-size: 0.88rem;">指数退避<sup>1</sup></a><a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 0.88rem;">数据库<sup>1</sup></a><a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 0.88rem;">消息队列<sup>1</sup></a><a href="/tags/%E7%AE%97%E6%B3%95%E6%8A%80%E5%B7%A7/" style="font-size: 0.88rem;">算法技巧<sup>6</sup></a><a href="/tags/%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84/" style="font-size: 0.88rem;">系统架构<sup>5</sup></a><a href="/tags/%E7%BB%8F%E6%B5%8E%E5%AD%A6/" style="font-size: 0.88rem;">经济学<sup>4</sup></a><a href="/tags/%E7%BC%96%E7%A8%8B%E5%8E%86%E5%8F%B2/" style="font-size: 0.88rem;">编程历史<sup>8</sup></a><a href="/tags/%E7%BC%96%E7%A8%8B%E5%8E%9F%E7%90%86/" style="font-size: 0.88rem;">编程原理<sup>31</sup></a><a href="/tags/%E7%BC%96%E7%A8%8B%E5%B7%A5%E5%85%B7/" style="font-size: 0.88rem;">编程工具<sup>1</sup></a><a href="/tags/%E8%81%8C%E5%9C%BA%E5%BF%83%E5%A3%B0/" style="font-size: 0.88rem;">职场心声<sup>1</sup></a><a href="/tags/%E8%BD%AF%E4%BB%B6%E5%B7%A5%E5%85%B7/" style="font-size: 0.88rem;">软件工具<sup>2</sup></a><a href="/tags/%E9%9D%A2%E8%AF%95%E7%BB%8F%E9%AA%8C/" style="font-size: 0.88rem;">面试经验<sup>4</sup></a></div></div><hr/></div></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="anzhiyufont anzhiyu-icon-book-open"></i></button><button id="translateLink" type="button" title="简繁转换">繁</button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="anzhiyufont anzhiyu-icon-circle-half-stroke"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="anzhiyufont anzhiyu-icon-arrows-left-right"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="anzhiyufont anzhiyu-icon-gear"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="anzhiyufont anzhiyu-icon-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i></button></div></div><div id="rightMenu"><div class="rightMenu-group rightMenu-small"><div class="rightMenu-item" id="menu-backward"><i class="anzhiyufont anzhiyu-icon-arrow-left"></i></div><div class="rightMenu-item" id="menu-forward"><i class="anzhiyufont anzhiyu-icon-arrow-right"></i></div><div class="rightMenu-item" id="menu-refresh"><i class="anzhiyufont anzhiyu-icon-arrow-rotate-right" style="font-size: 1rem;"></i></div><div class="rightMenu-item" id="menu-top"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i></div></div><div class="rightMenu-group rightMenu-line rightMenuPlugin"><div class="rightMenu-item" id="menu-copytext"><i class="anzhiyufont anzhiyu-icon-copy"></i><span>复制选中文本</span></div><div class="rightMenu-item" id="menu-pastetext"><i class="anzhiyufont anzhiyu-icon-paste"></i><span>粘贴文本</span></div><a class="rightMenu-item" id="menu-commenttext"><i class="anzhiyufont anzhiyu-icon-comment-medical"></i><span>引用到评论</span></a><div class="rightMenu-item" id="menu-newwindow"><i class="anzhiyufont anzhiyu-icon-window-restore"></i><span>新窗口打开</span></div><div class="rightMenu-item" id="menu-copylink"><i class="anzhiyufont anzhiyu-icon-link"></i><span>复制链接地址</span></div><div class="rightMenu-item" id="menu-copyimg"><i class="anzhiyufont anzhiyu-icon-images"></i><span>复制此图片</span></div><div class="rightMenu-item" id="menu-downloadimg"><i class="anzhiyufont anzhiyu-icon-download"></i><span>下载此图片</span></div><div class="rightMenu-item" id="menu-newwindowimg"><i class="anzhiyufont anzhiyu-icon-window-restore"></i><span>新窗口打开图片</span></div><div class="rightMenu-item" id="menu-search"><i class="anzhiyufont anzhiyu-icon-magnifying-glass"></i><span>站内搜索</span></div><div class="rightMenu-item" id="menu-searchBaidu"><i class="anzhiyufont anzhiyu-icon-magnifying-glass"></i><span>百度搜索</span></div><div class="rightMenu-item" id="menu-music-toggle"><i class="anzhiyufont anzhiyu-icon-play"></i><span>播放音乐</span></div><div class="rightMenu-item" id="menu-music-back"><i class="anzhiyufont anzhiyu-icon-backward"></i><span>切换到上一首</span></div><div class="rightMenu-item" id="menu-music-forward"><i class="anzhiyufont anzhiyu-icon-forward"></i><span>切换到下一首</span></div><div class="rightMenu-item" id="menu-music-playlist" onclick="window.open(&quot;https://y.qq.com/n/ryqq/playlist/8802438608&quot;, &quot;_blank&quot;);" style="display: none;"><i class="anzhiyufont anzhiyu-icon-radio"></i><span>查看所有歌曲</span></div><div class="rightMenu-item" id="menu-music-copyMusicName"><i class="anzhiyufont anzhiyu-icon-copy"></i><span>复制歌名</span></div></div><div class="rightMenu-group rightMenu-line rightMenuOther"><a class="rightMenu-item menu-link" id="menu-randomPost"><i class="anzhiyufont anzhiyu-icon-shuffle"></i><span>随便逛逛</span></a><a class="rightMenu-item menu-link" href="/categories/"><i class="anzhiyufont anzhiyu-icon-cube"></i><span>博客分类</span></a><a class="rightMenu-item menu-link" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags"></i><span>文章标签</span></a></div><div class="rightMenu-group rightMenu-line rightMenuOther"><a class="rightMenu-item" id="menu-copy" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-copy"></i><span>复制地址</span></a><a class="rightMenu-item" id="menu-commentBarrage" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-message"></i><span class="menu-commentBarrage-text">关闭热评</span></a><a class="rightMenu-item" id="menu-darkmode" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-circle-half-stroke"></i><span class="menu-darkmode-text">深色模式</span></a><a class="rightMenu-item" id="menu-translate" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-language"></i><span>轉為繁體</span></a></div></div><div id="rightmenu-mask"></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="/pluginsSrc/@fancyapps/ui/dist/fancybox/fancybox.umd.js"></script><script src="/pluginsSrc/instant.page/instantpage.js" type="module"></script><script src="/pluginsSrc/vanilla-lazyload/dist/lazyload.iife.min.js"></script><script src="/pluginsSrc/node-snackbar/dist/snackbar.min.js"></script><canvas id="universe"></canvas><script async src="https://npm.elemecdn.com/anzhiyu-theme-static@1.0.0/dark/dark.js"></script><script async src="/anzhiyu/random.js"></script><div class="js-pjax"><input type="hidden" name="page-type" id="page-type" value="post"></div><script async data-pjax src="https://npm.elemecdn.com/anzhiyu-theme-static@1.0.1/bubble/bubble.js"></script><script async data-pjax src="/pluginsSrc/anzhiyu-theme-static/waterfall/waterfall.js"></script><script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/qrcodejs/1.0.0/qrcode.min.js"></script><script src="/js/anzhiyu/right_click_menu.js"></script><link rel="stylesheet" href="/pluginsSrc/anzhiyu-theme-static/icon/ali_iconfont_css.css"><script defer="defer" id="fluttering_ribbon" mobile="true" src="/pluginsSrc/butterfly-extsrc/dist/canvas-fluttering-ribbon.min.js"></script><link rel="stylesheet" href="/pluginsSrc/anzhiyu-theme-static/aplayer/APlayer.min.css" media="print" onload="this.media='all'"><script src="/pluginsSrc/anzhiyu-blog-static/js/APlayer.min.js"></script><script src="/pluginsSrc/hexo-anzhiyu-music/assets/js/Meting2.min.js"></script><script src="/pluginsSrc/pjax/pjax.min.js"></script><script>let pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: false,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:send', function () {
+  // removeEventListener scroll 
+  anzhiyu.removeGlobalFnEvent('pjax')
+  anzhiyu.removeGlobalFnEvent('themeChange')
+
+  document.getElementById('rightside').classList.remove('rightside-show')
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  //reset readmode
+  const $bodyClassList = document.body.classList
+  $bodyClassList.contains('read-mode') && $bodyClassList.remove('read-mode')
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  document.querySelectorAll('script[data-pjax]').forEach(item => {
+    const newScript = document.createElement('script')
+    const content = item.text || item.textContent || item.innerHTML || ""
+    Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+    newScript.appendChild(document.createTextNode(content))
+    item.parentNode.replaceChild(newScript, item)
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof panguInit === 'function' && panguInit()
+
+  // google analytics
+  typeof gtag === 'function' && gtag('config', '', {'page_path': window.location.pathname});
+
+  // baidu analytics
+  typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+})
+
+document.addEventListener('pjax:error', e => {
+  if (e.request.status === 404) {
+    pjax.loadUrl('/404.html')
+  }
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><script charset="UTF-8" src="/pluginsSrc/anzhiyu-theme-static/accesskey/accesskey.js"></script></div><div id="popup-window"><div class="popup-window-title">通知</div><div class="popup-window-divider"></div><div class="popup-window-content"><div class="popup-tip">你好呀</div><div class="popup-link"><i class="anzhiyufont anzhiyu-icon-arrow-circle-right"></i></div></div></div></body></html>

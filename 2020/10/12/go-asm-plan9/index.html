@@ -1,0 +1,573 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><title>初识Golang汇编 | 极客之道</title><meta name="keywords" content="初识Golang汇编"><meta name="author" content="ivansli"><meta name="copyright" content="ivansli"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#f7f9fe"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-touch-fullscreen" content="yes"><meta name="apple-mobile-web-app-title" content="初识Golang汇编"><meta name="application-name" content="初识Golang汇编"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="#f7f9fe"><meta property="og:type" content="article"><meta property="og:title" content="初识Golang汇编"><meta property="og:url" content="https://blog.ivansli.com/2020/10/12/go-asm-plan9/index.html"><meta property="og:site_name" content="极客之道"><meta property="og:description" content="初识Golang汇编"><meta property="og:locale" content="zh-CN"><meta property="og:image" content="https://blog.ivansli.com/img/2021/11/134490072.jpg"><meta property="article:author" content="ivansli"><meta property="article:tag" content="伊万的小站,ivansli,编程技术,编程技术之道,编程原理,go开发技巧"><meta name="twitter:card" content="summary"><meta name="twitter:image" content="https://blog.ivansli.com/img/2021/11/134490072.jpg"><meta name="description" content="初识Golang汇编"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://blog.ivansli.com/2020/10/12/go-asm-plan9/"><link rel="preconnect"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="xxx"/><meta name="baidu-site-verification" content="code-xxx"/><meta name="msvalidate.01" content="xxx"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="/pluginsSrc/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="/pluginsSrc/@fancyapps/ui/dist/fancybox/fancybox.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://npm.elemecdn.com/anzhiyu-theme-static@1.0.0/swiper/swiper.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  linkPageTop: undefined,
+  peoplecanvas: undefined,
+  postHeadAiDescription: undefined,
+  diytitle: undefined,
+  LA51: undefined,
+  greetingBox: undefined,
+  twikooEnvId: 'https://blogtalk.ivansli.com',
+  commentBarrageConfig:undefined,
+  root: '/',
+  preloader: undefined,
+  friends_vue_info: undefined,
+  navMusic: false,
+  mainTone: undefined,
+  authorStatus: {"skills":["🤖️ 数码科技爱好者","🔍 分享与热心帮助","🏃 脚踏实地行动派"]},
+  algolia: undefined,
+  localSearch: undefined,
+  translate: {"defaultEncoding":2,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"简","rightMenuMsgToTraditionalChinese":"转为繁体","rightMenuMsgToSimplifiedChinese":"转为简体"},
+  noticeOutdate: {"limitDay":365,"position":"top","messagePrev":"It has been","messageNext":"days since the last update, the content of the article may be outdated."},
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    simplehomepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"copy":true,"copyrightEbable":false,"limitCount":50,"languages":{"author":"作者: ivansli","link":"链接: ","source":"来源: 极客之道","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。","copySuccess":"复制成功，复制和转载请标注本文地址"}},
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#425AEF","bgDark":"#1f1f1f","position":"top-center"},
+  source: {
+    justifiedGallery: {
+      js: '/pluginsSrc/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: '/pluginsSrc/flickr-justified-gallery/dist/fjGallery.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: true,
+  isAnchor: false,
+  shortcutKey: undefined,
+  autoDarkmode: true
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  configTitle: '极客之道',
+  title: '初识Golang汇编',
+  postAI: '',
+  pageFillDescription: '0. 为什么写本文, 1. 为什么需要汇编, 1.1 程序的编译过程, 2. 程序与进程, 2.1 程序, 2.2 进程, 3. Go汇编, 3.1 几个概念, 3.2 Go的核心寄存器, 3.2.1 伪寄存器的内存模型, 3.2.2 几点说明, 3.2.3 IA64和plan9的对应关系, 3.3 常用操作指令, 4. 汇编分析, 4.1 如何输出Go汇编, 4.2 Go汇编示例, 4.3 Go汇编解析, 4.3.1 add函数汇编解析, 4.3.2 函数栈桢结构模型, 4.4 Go汇编语法, 4.4.1 函数声明, 4.4.2 变量声明, 5. 手写汇编实现功能, 5.1 使用Go汇编实现add函数, 5.2 反编译可执行程序, 6. Go调试工具, 6.1 gdb调试Go代码, 6.2 delve调试代码, 7. 总结, 8. 参考资料为什么写本文在分析的某些特性底层功能实现时发现很多跟运行时有关而要掌握这一部分的话有一道坎是绕不过去的那就是汇编索性就查阅了一些资料在阅读之余整理总结了一下并分享给大家本文使用版本为为什么需要汇编众所周知在计算机的世界里只有种类型那就是和计算机工作是由一系列的机器指令进行驱动的这些指令又是一组二进制数字其对应计算机的高低电平而这些机器指令的集合就是机器语言这些机器语言在最底层是与硬件一一对应的显而易见这样的机器指令有一个致命的缺点可阅读性太差恐怕也只有天才和疯子才有能力把控得了为了解决可读性的问题以及代码编辑的需求于是就诞生了最接近机器的语言汇编语言在我看来汇编语言更像一种助记符这些人们容易记住的每一条助记符都映射着一条不容易记住的由组成的机器指令你觉得像不像域名与地址的关系呢程序的编译过程以语言为例来说从的源码文件到可执行文件经过编译器处理大致分为几个阶段编译器在不同的阶段会做不同的事情但是有一步是可以确定的那就是源码会被编译成汇编最后才是二进制程序与进程源码经过编译之后得到一个二进制的可执行文件文件这两个字也就表明目前得到的这个文件跟其他文件对比除了是具有一定的格式中是格式即可运行可链接的二进制组成并没什么区别在中文件类型大致分为种块设备文件字符设备文件目录普通文件链接管道通过上面可以看到可执行文件与源码文件都是同一种类型属于普通文件当然了在中有一句很经典的话一切皆文件那么问题来了什么是程序什么是进程程序维基百科告诉我们程序是指一组指示计算机或其他具有消息处理能力设备每一步动作的指令通常用某种程序设计语言编写运行于某种目标体系结构上从某个层面来看可以把程序分为静态程序动态程序静态程序单纯的指具有一定格式的可执行二进制文件动态程序则是静态可执行程序文件被加载到内存之后的一种运行时模型又称为进程进程首先要知道的是进程是分配系统资源的最小单位线程带有时间片的函数是系统调度的最小单位进程包含线程线程所属于进程创建进程一般使用方法通常会有个拉起程序先自身生成一个子进程然后在该子进程中通过函数把对应程序加载进来进而启动目标进程当然实际上要复杂得多而创建线程则是使用线程库以位操作系统为例进程经典的虚拟内存结构模型如下图所示其中有两处结构是静态程序所不具有的那就是运行时堆与运行时栈运行时堆从低地址向高地址增长申请的内存空间需要程序员自己或者由释放运行时栈从高地址向低地址增长内存空间在当前栈桢调用结束之后自动释放并不是清除其所占用内存中数据而是通过栈顶指针的移动来标识哪些内存是正在使用的汇编对于编译器而言其输出的结果是一种抽象可移植的汇编代码这种汇编的汇编是基于的汇编并不对应某种真实的硬件架构的汇编器会使用这种伪汇编再为目标硬件生成具体的机器指令伪汇编这一个额外层可以带来很多好处最主要的一点是方便将移植到新的架构上相关的信息可以参考的要了解的汇编器最重要的是要知道的汇编器不是对底层机器的直接表示即的汇编器没有直接使用目标机器的汇编指令汇编器所用的指令一部分与目标机器的指令一一对应而另外一部分则不是这是因为编译器套件不需要汇编器直接参与常规的编译过程相反编译器使用了一种半抽象的指令集并且部分指令是在代码生成后才被选择的汇编器基于这种半抽象的形式工作所以虽然你看到的是一条指令但是工具链针对对这条指令实际生成可能完全不是一个移动指令也许会是清除或者加载也有可能精确的对应目标平台上同名的指令概括来说特定于机器的指令会以他们的本尊出现然而对于一些通用的操作如内存的移动以及子程序的调用以及返回通常都做了抽象细节因架构不同而不一样我们对这样的不精确性表示歉意情况并不明确汇编器程序的工作是对这样半抽象指令集进行解析并将其转变为可以输入到链接器的指令汇编使用的是模式被调用函数的入参参数返回值都由调用者维护准备因此当需要调用一个函数时需要先将这些工作准备好才调用下一个函数另外这些都需要进行内存对齐对齐的大小是几个概念在深入了解汇编之前需要知道的几个概念栈进程线程都有自己的调用栈先进后出栈帧可以理解是函数调用时在栈上为函数所分配的内存区域调用者比如函数调用了函数那么就是调用者被调者比如函数调用了函数那么就是被调者的核心寄存器汇编中有个核心的伪寄存器这个寄存器是编译器用来维护上下文特殊标识等作用的寄存器说明使用如的方式引用函数的入参参数例如使用必须加否则无法通过编译从汇编层面来看没有什么用加主要是为了提升代码可读性另外需要注意的是往往在编写汇编代码时要站在的角度来看在看来指向的是调用时传递的第一个参数的位置假如当前的函数是在的代码中引用该指向的位置不在的之内而是在的上指向调用函数时传递的第一个参数的位置经常在中用来获取入参的参数值全局静态基指针一般用在声明函数全局变量中寄存器保存的值就是代码区的起始地址它主要用来定位全局符号汇编中的函数定义函数调用全局变量定义以及对其引用会用到这个虚拟寄存器使用查看二进制程序的符号表出现很多符号在使用符号时会带上后缀例如可理解为从地址开始找到符号该寄存器也是最具有迷惑性的寄存器因为会有伪寄存器和硬件寄存器之分的这个伪寄存器指向当前栈帧第一个局部变量的结束位置为什么说是结束位置可以看下面寄存器内存布局图使用形如的方式引用函数的局部变量的合法取值是注意是个左闭右开的区间假如局部变量都是字节那么第一个局部变量就可以用来表示与硬件寄存器是两个不同的东西在栈帧为的情况下伪寄存器和硬件寄存器指向同一位置手写汇编代码时如果是形式则表示伪寄存器如果是则表示硬件寄存器务必注意对于编译输出的代码来讲所有的都是硬件寄存器无论是否带这一点非常具有迷惑性需要慢慢理解往往在分析编译输出的汇编时看到的就是硬件寄存器实际上就是在体系结构的知识中常见的寄存器在平台下对应寄存器上则是除了个别跳转之外手写汇编代码时很少用到寄存器通过上面的讲解想必已经对个核心寄存器的区别有了一定的认识或者是更加的迷惑一头雾水那么需要留意的是如果是在分析编译输出的汇编代码时要重点看寄存器寄存器在这里是看不到的如果是在手写汇编代码那么要重点看寄存器伪寄存器的内存模型下图描述了栈桢与各个寄存器的内存关系模型值得注意的是要站在的角度来看有一点需要注意的是也是在的栈上的不过往栈上插的过程是由指令完成的在分析汇编时是看不到关于相关空间信息的在分配栈空间时所占用空间大小不包含在栈帧大小内在环境伪寄存器其实是指令计数器寄存器的别名伪寄存器对应的是函数的帧指针一般用来访问函数的入参参数和返回值伪栈指针对应的是当前函数栈帧的底部不包括参数和返回值部分一般用于定位局部变量伪是一个比较特殊的寄存器因为还存在一个同名的真寄存器真寄存器对应的是栈的顶部在编写汇编时当需要区分伪寄存器和真寄存器的时候只需要记住一点伪寄存器一般需要一个标识符和偏移量为前缀如果没有标识符前缀则是真寄存器比如没有标识符前缀为真寄存器而有标识符为前缀表示伪寄存器几点说明我们这里对容易混淆的几点简单进行说明伪和硬件不是一回事在手写汇编代码时伪和硬件的区分方法是看该前是否有如果有那么即为伪寄存器如果没有那么说明是硬件寄存器伪和的相对位置是会变的所以不应该尝试用伪寄存器去找那些用来引用的值例如函数的入参和返回值官方文档中说的伪指向的可能是有问题的其指向的局部变量位置实际上是整个栈的栈底除之外所以说更合适一些在输出的代码中是没有伪和寄存器的我们上面说的区分伪和硬件寄存器的方法对于上述两个命令的输出结果是没法使用的在编译和反汇编的结果中只有真实的寄存器和的对应关系在汇编里还可以直接使用的的通用寄存器应用代码层面会用到的通用寄存器主要是这些寄存器虽然和也可以用不过和会被用来管理栈顶和栈底最好不要拿来进行运算中使用寄存器不需要带或的前缀例如只要写即可下面是通用通用寄存器的名字在和中的对应关系常用操作指令下面列出了常用的几个汇编指令指令后缀说明是位上的汇编指令助记符指令种类用途示例传送数据传送把传送到传送地址传送把有效地址传送到传送栈压入将内容送入栈顶位置传送栈弹出弹出栈顶数据后修改栈顶指针运算相加并赋值等价于运算相减并赋值等价于运算比较大小比较和的大小转移调用函数发起调用转移无条件转移指令无条件转至地址处转移条件转移指令左边小于右边则跳到指令首先会把寄存器中的值入栈然后设置值为目标地址又因为寄存器决定了下一条需要执行的指令所以当执行完当前指令后就会跳转到目标地址去执行指令从被调用函数返回调用函数它的实现原理是把指令入栈的返回地址弹出给寄存器汇编分析说了那么多如何输出汇编对于写好的源码生成对应的汇编大概有下面几种方法先使用生成对应的可执行二进制文件再使用反编译获取对应的汇编反编译时表示只输出包中相关的汇编则表示只输出包中方法相关的汇编方法使用这种方式直接输出汇编方法使用直接输出汇编注意在使用这些命令时加上对应的否则某些逻辑会被编译器优化掉而看不到对应完整的汇编代码禁止内联编译时禁止优化输出汇编代码汇编示例示例代码不设置该局部变量栈空间大小会是编译源代码输出汇编截取主要汇编如下生成栈空间初始化返回值局部变量赋为取参数等价于赋值局部变量设置返回值清除栈空间生成栈空间入参入参调用函数清除栈空间这里列举了一个简单的类型加法示例实际开发中会遇到各种参数类型要复杂的多这里只是抛砖引玉汇编解析针对输出汇编对重要核心代码进行分析函数汇编解析指令声明了是代码段的一部分并表明跟在这个声明后的是函数的函数体在链接期这个空字符会被替换为当前的包名也就是说在链接到二进制文件后会变成是一个虚拟的伪寄存器保存静态基地址指针即我们程序地址空间的开始地址表明我们的符号位于某个固定的相对地址空间起始处的偏移位置最终是由链接器计算得到的换句话来讲它有一个直接的绝对地址是一个全局的函数符号向编译器表明不应该插入的用来检查栈需要扩张的前导指令在我们函数的这种情况下编译器自己帮我们插入了这个标记它足够聪明地意识到由于没有任何局部变量且没有它自己的栈帧所以一定不会超出当前的栈不然每次调用函数时在这里执行栈检查就是完全浪费时间了代表即将分配的栈帧大小字节地址大小字节局部变量大小字节只是个分隔符固定格式指定了调用方传入的参数返回值大小字节入参大小字节返回值字节通常来讲帧大小后一般都跟随着一个参数大小用减号分隔这不是一个减法操作只是一种特殊的语法帧大小意味着这个函数有个字节的帧以及个字节的参数位于调用者的帧上如果没有在中指定则必须提供参数大小对于原型的汇编函数会检查参数大小是否正确为栈顶指针该语句等价于由于栈空间是向下增长的所以开辟栈空间时为减操作表示生成字节大小的栈空间此时的为函数栈的栈顶指针的位置则是返回值的位置该位置位于函数栈空间内该语句设置返回值类型的值即初始化返回值防止得到脏数据返回值类型为的值为从函数栈空间获取入参的值存到寄存器从函数栈空间获取入参的值与寄存器中存储的值相加结果存到相当于把的结果放到函数栈中返回值所在的位置归还函数占用的栈空间函数栈桢结构模型根据对应汇编绘制的函数栈桢结构模型还记得前面提到的汇编使用的是模式被调用函数的参数返回值栈位置都需要由调用者维护准备吗在函数栈桢结构中可以看到函数的入参以及返回值都由调用者函数维护也正是因为如此有了其他语言不具有的支持多个返回值的特性汇编语法这里重点讲一下函数声明变量声明函数声明来看一个典型的汇编函数定义该函数声明定义在同一个下的任意文件中只有函数头没有实现函数的汇编实现默认是汇编实现为什么是开头仔细观察上面的进程内存布局图就会发现我们的代码在是存储在段中的这里也就是一种约定俗成的起名方式实际上在中是一个指令用来定义一个函数定义中的是可以省略的非想写也可以写上不过写上的话在重命名之后还需要改代码默认为编译器会在链接期自动加上所属的包名称中点比较特殊是一个的中点该点在下的输入方法是在程序被链接之后所有的中点都会被替换为句号比如你的方法是在编译之后的程序里的符号则是简单总结一下汇编实现函数声明格式为静态基地址指针函数入参返回值总大小函数所属包名函数名函数栈帧大小函数栈帧大小局部变量可能需要的额外调用函数的参数空间的总大小不包括调用其它函数时的的大小是一个虚拟寄存器保存了静态基地址指针即我们程序地址空间的开始地址表明我们的符号位于某个固定的相对地址空间起始处的偏移位置最终是由链接器计算得到的换句话来讲它有一个直接的绝对地址是一个全局的函数符号向编译器表明不应该插入的用来检查栈需要扩张的前导指令在我们函数的这种情况下编译器自己帮我们插入了这个标记它足够聪明地意识到不会超出当前的栈因此没必要调用函数时在这里执行栈检查变量声明汇编里的全局变量一般是存储在或者段中对应到代码就是已初始化过的全局的变量常量使用结合来定义一个变量的用法为大多数参数都是字面意思不过这个需要注意其含义是该值相对于符号的偏移而不是相对于全局某个地址的偏移汇编指令用于定义名为的全局变量变量对应的内存宽度为内存宽度部分必须用常量初始化下面是定义了多个变量的例子数值为字节数值为字节数值为字节变量使用个来定义共个字节共个字节个空格共个字节共个字节共个字节个空格共个字节大部分都比较好理解不过这里引入了新的标记这个跟在符号名之后表示该全局变量只在当前文件中生效类似于语言中的如果在另外文件中引用该变量的话会报的错误手写汇编实现功能在源码中会看到一些汇编写的代码这些代码跟其他代码一起组成了整个的底层功能实现下面我们通过一个简单的汇编代码示例来实现两数相加功能使用汇编实现函数代码源码中函数只有函数签名没有具体的实现使用汇编实现使用汇编实现的函数栈空间为入参返回值大小字节从中取参数从中取参数保存结果到返回值把源码与汇编编译到一起我这里这两个文件在同一个目录我这里目录为所以得到可执行程序运行得到结果反编译可执行程序对中得到的可执行程序使用进行反编译获取汇编代码得到汇编生成栈桢参数值参数值反编译得到的汇编与文件中的汇编大致操作一致获取第一个参数参数参数保存计算结果通过上面操作可知伪寄存器只有在编写汇编代码时使用伪寄存器指向传递给的第一个参数使用得到的汇编中看不到寄存器的踪影调试工具这里推荐个代码调试工具调试代码测试代码编译使用调试显示源码在源码行处设置断点显示变量打印的结构打印指针指向的数据显示汇编常用的调试命令与命令和命令除了另外推荐一款的增强版调试工具效果如下图所示分两个窗口上面显示源代码下面是具体的命令行调试界面跟一样调试代码项目地址带图形化界面的项目地址的安装使用这里不再做过多讲解感兴趣的可以尝试一下作为调试工具自是不用多说比较老牌强大可以支持多种语言则是使用语言开发的用来调试的工具功能也是十分强大打印结果可以显示支持不了的东西这里不再做过多讲解有兴趣的可以查阅相关资料总结对于汇编基础大致需要熟悉下面几个方面通过上面的例子相信已经让你对的汇编有了一定的理解当然对于大部分业务开发人员来说只要看的懂即可如果想进一步的了解可以阅读相关的资料或者书籍最后想说的是鉴于个人能力有限在阅读过程中你可能会发现存在的一些问题或者缺陷欢迎各位大佬指正如果感兴趣的话也可以一起私下交流参考资料在整理的过程中部分参考引用下面链接地址内容有一些写的还是不错的感兴趣的同学可以阅读汇编入门',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2023-10-31 13:17:44',
+  postMainColor: '',
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#18171d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f7f9fe')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+          const isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches
+          const isNotSpecified = window.matchMedia('(prefers-color-scheme: no-preference)').matches
+          const hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+
+          if (t === undefined) {
+            if (isLightMode) activateLightMode()
+            else if (isDarkMode) activateDarkMode()
+            else if (isNotSpecified || hasNoSupport) {
+              const now = new Date()
+              const hour = now.getHours()
+              const isNight = hour <= 6 || hour >= 18
+              isNight ? activateDarkMode() : activateLightMode()
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addListener(e => {
+              if (saveToLocal.get('theme') === undefined) {
+                e.matches ? activateDarkMode() : activateLightMode()
+              }
+            })
+          } else if (t === 'light') activateLightMode()
+          else activateDarkMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 6.3.0"></head><body data-type="anzhiyu"><div id="web_bg"></div><div id="an_music_bg"></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><div id="nav-group"><span id="blog_name"><a id="site-name" href="/" accesskey="h"><div class="title">极客之道</div><i class="anzhiyufont anzhiyu-icon-house-chimney"></i></a></span><div class="mask-name-container"><div id="name-container"><a id="page-name" href="javascript:anzhiyu.scrollToDest(0, 500)">PAGE_NAME</a></div></div><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/"><i class="anzhiyufont anzhiyu-icon-house-chimney faa-tada"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/archives/"><i class="anzhiyufont anzhiyu-icon-box-archive faa-tada"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags faa-tada"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/booklist/"><i class="anzhiyufont anzhiyu-icon-book faa-tada"></i><span> 书单</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/about/"><i class="anzhiyufont anzhiyu-icon-paper-plane faa-tada"></i><span> 关于</span></a></div></div></div><div id="nav-right"><div class="nav-button" id="randomPost_button"><a class="site-page" onclick="toRandomPost()" title="随机前往一个文章" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-dice"></i></a></div><input id="center-console" type="checkbox"/><div class="nav-button" id="nav-totop"><a class="totopbtn" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i><span id="percent" onclick="anzhiyu.scrollToDest(0,500)">0</span></a></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);" title="切换"><i class="anzhiyufont anzhiyu-icon-bars"></i></a></div></div></div></nav><div id="post-info"><div id="post-firstinfo"><div class="meta-firstline"><a class="post-meta-original">原创</a><span class="post-meta-categories"><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-inbox post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%BC%96%E7%A8%8B%E5%8E%9F%E7%90%86/" itemprop="url">编程原理</a></span><span class="article-meta tags"><a class="article-meta__tags" href="/tags/%E7%BC%96%E7%A8%8B%E5%8E%9F%E7%90%86/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>编程原理</span></a><a class="article-meta__tags" href="/tags/golang/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>golang</span></a></span></div></div><h1 class="post-title" itemprop="name headline">初识Golang汇编</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="anzhiyufont anzhiyu-icon-calendar-days post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" itemprop="dateCreated datePublished" datetime="2020-10-12T01:00:00.000Z" title="发表于 2020-10-12 09:00:00">2020-10-12</time><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-history post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" itemprop="dateCreated datePublished" datetime="2023-10-31T05:17:44.555Z" title="更新于 2023-10-31 13:17:44">2023-10-31</time></span></div><div class="meta-secondline"><span class="post-meta-separator"></span><span class="post-meta-wordcount"><i class="anzhiyufont anzhiyu-icon-file-word post-meta-icon" title="文章字数"></i><span class="post-meta-label" title="文章字数">字数总计:</span><span class="word-count" title="文章字数">8.9k</span><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-clock post-meta-icon" title="阅读时长"></i><span class="post-meta-label" title="阅读时长">阅读时长:</span><span>34分钟</span></span><span class="post-meta-separator"></span><span class="post-meta-pv-cv" id="" data-flag-title="初识Golang汇编"><i class="anzhiyufont anzhiyu-icon-fw-eye post-meta-icon"></i><span class="post-meta-label" title="阅读量">阅读量:</span><span id="busuanzi_value_page_pv"><i class="anzhiyufont anzhiyu-icon-spinner anzhiyu-spin"></i></span></span><span class="post-meta-separator">       </span><span class="post-meta-position" title="作者IP属地为上海"><i class="anzhiyufont anzhiyu-icon-location-dot"></i>上海</span></div></div></div><section class="main-hero-waves-area waves-area"><svg class="waves-svg" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto"><defs><path id="gentle-wave" d="M -160 44 c 30 0 58 -18 88 -18 s 58 18 88 18 s 58 -18 88 -18 s 58 18 88 18 v 44 h -352 Z"></path></defs><g class="parallax"><use href="#gentle-wave" x="48" y="0"></use><use href="#gentle-wave" x="48" y="3"></use><use href="#gentle-wave" x="48" y="5"></use><use href="#gentle-wave" x="48" y="7"></use></g></svg></section><div id="post-top-cover"><img class="nolazyload" id="post-top-bg" src="/img/2021/11/58694895.jpg"></div></header><main id="blog-container"><div class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container" itemscope itemtype="https://blog.ivansli.com/2020/10/12/go-asm-plan9/"><header><a class="post-meta-categories" href="/categories/%E7%BC%96%E7%A8%8B%E5%8E%9F%E7%90%86/" itemprop="url">编程原理</a><a href="/tags/%E7%BC%96%E7%A8%8B%E5%8E%9F%E7%90%86/" tabindex="-1" itemprop="url">编程原理</a><a href="/tags/golang/" tabindex="-1" itemprop="url">golang</a><h1 id="CrawlerTitle" itemprop="name headline">初识Golang汇编</h1><span itemprop="author" itemscope itemtype="http://schema.org/Person">ivansli</span><time itemprop="dateCreated datePublished" datetime="2020-10-12T01:00:00.000Z" title="发表于 2020-10-12 09:00:00">2020-10-12</time><time itemprop="dateCreated datePublished" datetime="2023-10-31T05:17:44.555Z" title="更新于 2023-10-31 13:17:44">2023-10-31</time></header><h1 id="0-为什么写本文"><a href="#0-为什么写本文" class="headerlink" title="0. 为什么写本文"></a>0. 为什么写本文</h1><p>在分析go的某些特性底层功能实现时发现：很多跟runtime运行时有关，而要掌握这一部分的话，有一道坎是绕不过去的，那就是Go汇编。索性就查阅了一些资料，在阅读之余整理总结了一下，并分享给大家。</p>
+<p>（本文使用Go版本为 go1.14.1）</p>
+<h1 id="1-为什么需要汇编"><a href="#1-为什么需要汇编" class="headerlink" title="1. 为什么需要汇编"></a>1. 为什么需要汇编</h1><p>众所周知，在计算机的世界里，只有2种类型。那就是：0和1。</p>
+<p>计算机工作是由一系列的机器指令进行驱动的，这些指令又是一组二进制数字，其对应计算机的高低电平。而这些机器指令的集合就是机器语言，这些机器语言在最底层是与硬件一一对应的。</p>
+<p>显而易见，这样的机器指令有一个致命的缺点：<code>可阅读性太差</code>（恐怕也只有天才和疯子才有能力把控得了）。</p>
+<p>为了解决可读性的问题以及代码编辑的需求，于是就诞生了最接近机器的语言：汇编语言（在我看来，汇编语言更像一种助记符，这些人们容易记住的每一条助记符都映射着一条不容易记住的由0、1组成的机器指令。你觉得像不像域名与IP地址的关系呢？）。</p>
+<h2 id="1-1-程序的编译过程"><a href="#1-1-程序的编译过程" class="headerlink" title="1.1 程序的编译过程"></a>1.1 程序的编译过程</h2><p>以C语言为例来说，从hello.c的源码文件到hello可执行文件，经过编译器处理，大致分为几个阶段：<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2021/11/58694895.jpg"></p>
+<p>编译器在不同的阶段会做不同的事情，但是有一步是可以确定的，那就是：源码会被编译成汇编，最后才是二进制。</p>
+<h1 id="2-程序与进程"><a href="#2-程序与进程" class="headerlink" title="2. 程序与进程"></a>2. 程序与进程</h1><p>源码经过编译之后，得到一个二进制的可执行<code>文件</code>。<code>文件</code>这两个字也就表明，目前得到的这个文件跟其他文件对比，除了是具有一定的格式（Linux中是ELF格式，即：可运行可链接。executable linkable formate）的二进制组成，并没什么区别。</p>
+<p>在Linux中文件类型大致分为7种：</p>
+<ul>
+<li>b: 块设备文件</li>
+<li>c：字符设备文件</li>
+<li>d：目录</li>
+<li>-：普通文件</li>
+<li>l：链接</li>
+<li>s：socket</li>
+<li>p：管道<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2021/11/824223215.jpg"></li>
+</ul>
+<p>通过上面可以看到，可执行文件main与源码文件main.go，都是同一种类型，属于普通文件。（当然了，在Unix中有一句很经典的话：<code>一切皆文件</code>）。</p>
+<p>那么，问题来了：</p>
+<ol>
+<li>什么是程序？</li>
+<li>什么是进程？</li>
+</ol>
+<h2 id="2-1-程序"><a href="#2-1-程序" class="headerlink" title="2.1 程序"></a>2.1 程序</h2><p>维基百科告诉我们：<code>程序</code>是指一组指示计算机或其他具有消息处理能力设备每一步动作的指令，通常用某种程序设计语言编写，运行于某种目标体系结构上。</p>
+<p>从某个层面来看，可以把程序分为静态程序、动态程序：<br>静态程序：单纯的指具有一定格式的可执行二进制文件。<br>动态程序：则是静态可执行程序文件被加载到内存之后的一种运行时模型（又称为进程）。</p>
+<h2 id="2-2-进程"><a href="#2-2-进程" class="headerlink" title="2.2 进程"></a>2.2 进程</h2><p>首先，要知道的是，<code>进程</code>是分配系统资源的最小单位，<code>线程</code>(带有时间片的函数)是系统调度的最小单位。进程包含线程，线程所属于进程。</p>
+<p>创建进程一般使用fork方法(通常会有个拉起程序，先fork自身生成一个子进程。然后，在该子进程中通过exec函数把对应程序加载进来，进而启动目标进程。当然，实际上要复杂得多)，而创建线程则是使用pthread线程库。</p>
+<p>以32位Linux操作系统为例，进程经典的虚拟内存结构模型如下图所示：<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2021/11/134490072.jpg"></p>
+<p>其中，有两处结构是静态程序所不具有的，那就是<code>运行时堆(heap)</code>与<code>运行时栈(stack)</code>。</p>
+<p><code>运行时堆</code>从低地址向高地址增长，申请的内存空间需要程序员自己或者由GC释放。<br><code>运行时栈</code>从高地址向低地址增长，内存空间在当前栈桢调用结束之后自动释放(并不是清除其所占用内存中数据，而是通过栈顶指针SP的移动，来标识哪些内存是正在使用的)。</p>
+<h1 id="3-Go汇编"><a href="#3-Go汇编" class="headerlink" title="3. Go汇编"></a>3. Go汇编</h1><p>对于Go编译器而言，其输出的结果是一种抽象可移植的汇编代码，这种汇编（Go的汇编是基于Plan9的汇编）并不对应某种真实的硬件架构。Go的汇编器会使用这种伪汇编，再为目标硬件生成具体的机器指令。</p>
+<p><code>伪汇编</code>这一个额外层可以带来很多好处，最主要的一点是方便将Go移植到新的架构上。</p>
+<p>相关的信息可以参考 <code>Rob Pike</code> 的 <code>The Design of the Go Assembler</code>。</p>
+<blockquote>
+<p>要了解Go的汇编器最重要的是要知道Go的汇编器不是对底层机器的直接表示，即Go的汇编器没有直接使用目标机器的汇编指令。Go汇编器所用的指令，一部分与目标机器的指令一一对应，而另外一部分则不是。这是因为编译器套件不需要汇编器直接参与常规的编译过程。相反，编译器使用了一种半抽象的指令集，并且部分指令是在代码生成后才被选择的。汇编器基于这种半抽象的形式工作，所以虽然你看到的是一条MOV指令，但是工具链针对对这条指令实际生成可能完全不是一个移动指令，也许会是清除或者加载。也有可能精确的对应目标平台上同名的指令。概括来说，特定于机器的指令会以他们的本尊出现， 然而对于一些通用的操作，如内存的移动以及子程序的调用以及返回通常都做了抽象。细节因架构不同而不一样，我们对这样的不精确性表示歉意，情况并不明确。</p>
+<p>汇编器程序的工作是对这样半抽象指令集进行解析并将其转变为可以输入到链接器的指令。</p>
+<p>The most important thing to know about Go’s assembler is that it is not a direct representation of the underlying machine. Some of the details map precisely to the machine, but some do not. This is because the compiler suite needs no assembler pass in the usual pipeline. Instead, the compiler operates on a kind of semi-abstract instruction set, and instruction selection occurs partly after code generation. The assembler works on the semi-abstract form, so when you see an instruction like MOV what the toolchain actually generates for that operation might not be a move instruction at all, perhaps a clear or load. Or it might correspond exactly to the machine instruction with that name. In general, machine-specific operations tend to appear as themselves, while more general concepts like memory move and subroutine call and return are more abstract. The details vary with architecture, and we apologize for the imprecision; the situation is not well-defined.</p>
+<p>The assembler program is a way to parse a description of that semi-abstract instruction set and turn it into instructions to be input to the linker.</p>
+</blockquote>
+<p>Go汇编使用的是<code>caller-save</code>模式，被调用函数的入参参数、返回值都由调用者维护、准备。因此，当需要调用一个函数时，需要先将这些工作准备好，才调用下一个函数，另外这些都需要进行内存对齐，对齐的大小是sizeof(uintptr)。</p>
+<h2 id="3-1-几个概念"><a href="#3-1-几个概念" class="headerlink" title="3.1 几个概念"></a>3.1 几个概念</h2><p>在深入了解Go汇编之前，需要知道的几个概念：</p>
+<ul>
+<li>栈：进程、线程、goroutine都有自己的调用栈，先进后出（FILO）</li>
+<li>栈帧：可以理解是函数调用时，在栈上为函数所分配的内存区域</li>
+<li>调用者：caller，比如：A函数调用了B函数，那么A就是调用者</li>
+<li>被调者：callee，比如：A函数调用了B函数，那么B就是被调者</li>
+</ul>
+<h2 id="3-2-Go的核心寄存器"><a href="#3-2-Go的核心寄存器" class="headerlink" title="3.2 Go的核心寄存器"></a>3.2 Go的核心寄存器</h2><p>go 汇编中有4个核心的伪寄存器，这4个寄存器是编译器用来维护上下文、特殊标识等作用的：</p>
+<table>
+<thead>
+<tr>
+<th align="center">寄存器</th>
+<th align="center">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">SB(Static base pointer)</td>
+<td align="center">global symbols</td>
+</tr>
+<tr>
+<td align="center">FP(Frame pointer)</td>
+<td align="center">arguments and locals</td>
+</tr>
+<tr>
+<td align="center">PC(Program counter)</td>
+<td align="center">jumps and branches</td>
+</tr>
+<tr>
+<td align="center">SP(Stack pointer)</td>
+<td align="center">top of stack</td>
+</tr>
+</tbody></table>
+<ul>
+<li>FP: 使用如 <code>symbol+offset(FP)</code>的方式，引用callee函数的入参参数。例如 <code>arg0+0(FP)，arg1+8(FP)</code>，使用FP必须加symbol ，否则无法通过编译(从汇编层面来看，symbol没有什么用，加symbol主要是为了提升代码可读性)。<br>另外，需要注意的是：往往在编写go汇编代码时，要站在callee的角度来看(FP)，在callee看来，(FP)指向的是caller调用callee时传递的第一个参数的位置。<br>假如当前的callee函数是add，在add的代码中引用FP，该FP指向的位置不在callee的stack frame之内。而是在caller的stack frame上，指向调用add函数时传递的第一个参数的位置，经常在callee中用<code>symbol+offset(FP)</code>来获取入参的参数值。</li>
+<li>SB: 全局静态基指针，一般用在声明函数、全局变量中。<blockquote>
+<p>SB寄存器保存的值就是代码区的起始地址，它主要用来定位全局符号。<br>go汇编中的函数定义、函数调用、全局变量定义以及对其引用会用到这个SB虚拟寄存器</p>
+</blockquote>
+</li>
+</ul>
+<p>使用<code>readelf</code>查看go二进制程序的符号表，出现很多符号。<br>在使用符号时会带上<code>(SB)</code>后缀，例如：<code>runtime.newobject(SB)</code>，可理解为从SB地址开始找到<code>runtime.newobject</code>符号。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ readelf -s go-demo                 </span><br><span class="line"></span><br><span class="line">Symbol table &#x27;.symtab&#x27; contains 2156 entries:</span><br><span class="line">   Num:    Value          Size Type    Bind   Vis      Ndx Name</span><br><span class="line">     0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND </span><br><span class="line">     1: 0000000000000000     0 FILE    LOCAL  DEFAULT  ABS go.go</span><br><span class="line">     2: 0000000000401000     0 FUNC    LOCAL  DEFAULT    1 runtime.text</span><br><span class="line">     3: 0000000000402000   557 FUNC    LOCAL  DEFAULT    1 cmpbody</span><br><span class="line">     4: 0000000000402260   370 FUNC    LOCAL  DEFAULT    1 countbody</span><br><span class="line">     5: 0000000000402420   318 FUNC    LOCAL  DEFAULT    1 memeqbody</span><br><span class="line">     6: 00000000004025a0   756 FUNC    LOCAL  DEFAULT    1 indexbody</span><br><span class="line">     7: 00000000004028e0   279 FUNC    LOCAL  DEFAULT    1 indexbytebody</span><br><span class="line">     8: 0000000000458ae0    64 FUNC    LOCAL  DEFAULT    1 gogo</span><br><span class="line">   ...</span><br><span class="line">   112: 0000000000402de0    94 FUNC    GLOBAL DEFAULT    1 runtime.c128hash</span><br><span class="line">   113: 0000000000402e40   261 FUNC    GLOBAL DEFAULT    1 runtime.interhash</span><br><span class="line">   114: 0000000000402f60   261 FUNC    GLOBAL DEFAULT    1 runtime.nilinterhash</span><br><span class="line">   ...</span><br><span class="line">   133: 0000000000403900    61 FUNC    GLOBAL DEFAULT    1 runtime.atomicstorep</span><br><span class="line">   134: 0000000000403940   235 FUNC    GLOBAL DEFAULT    1 runtime.mmap</span><br><span class="line">   135: 0000000000403a40   122 FUNC    GLOBAL DEFAULT    1 runtime.mmap.func1</span><br><span class="line">   136: 0000000000403ac0   180 FUNC    GLOBAL DEFAULT    1 runtime.munmap</span><br><span class="line">   137: 0000000000403b80    72 FUNC    GLOBAL DEFAULT    1 runtime.munmap.func1</span><br><span class="line">   ...</span><br><span class="line">   228: 000000000040c660    66 FUNC    GLOBAL DEFAULT    1 runtime.newobject ;;runtime.newobject</span><br><span class="line">   229: 000000000040c6c0   171 FUNC    GLOBAL DEFAULT    1 runtime.newarray</span><br><span class="line">   230: 000000000040c780   206 FUNC    GLOBAL DEFAULT    1 runtime.profilealloc</span><br><span class="line">   231: 000000000040c860   327 FUNC    GLOBAL DEFAULT    1 runtime.fastexprand</span><br><span class="line">   ...</span><br><span class="line">   620: 0000000000432b20    52 FUNC    GLOBAL DEFAULT    1 runtime.printpointer</span><br><span class="line">   621: 0000000000432b60    52 FUNC    GLOBAL DEFAULT    1 runtime.printuintptr</span><br><span class="line">   622: 0000000000432ba0   127 FUNC    GLOBAL DEFAULT    1 runtime.printstring</span><br><span class="line">   623: 0000000000432c20   198 FUNC    GLOBAL DEFAULT    1 runtime.printslice</span><br><span class="line">   ...</span><br><span class="line">  1522: 0000000000485e40   219 FUNC    GLOBAL DEFAULT    1 main.main</span><br><span class="line">  1523: 0000000000485f20   278 FUNC    GLOBAL DEFAULT    1 main.init</span><br><span class="line">  1524: 000000000051aa00    48 OBJECT  GLOBAL DEFAULT    9 main..inittask</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>SP: 该寄存器也是最具有迷惑性的寄存器，因为会有伪SP寄存器和硬件SP寄存器之分。<br>plan9的这个伪SP寄存器指向当前栈帧第一个局部变量的结束位置(为什么说是结束位置，可以看下面寄存器内存布局图)，使用形如 symbol+offset(SP) 的方式，引用函数的局部变量。offset 的合法取值是 [-framesize, 0)，注意是个左闭右开的区间。假如局部变量都是8 字节，那么第一个局部变量就可以用 localvar0-8(SP) 来表示。与硬件寄存器SP是两个不同的东西，在栈帧size为 0 的情况下，伪寄存器 SP和硬件寄存器SP指向同一位置。<br>手写汇编代码时，如果是symbol+offset(SP)形式，则表示伪寄存器SP。如果是offset(SP)则表示硬件寄存器SP。<br><code>务必注意</code>：对于编译输出(go tool compile -S &#x2F; go tool objdump)的代码来讲，所有的SP都是硬件SP寄存器，无论是否带symbol（这一点非常具有迷惑性，需要慢慢理解。往往在分析编译输出的汇编时，看到的就是硬件SP寄存器）。</li>
+<li>PC: 实际上就是在体系结构的知识中常见的pc寄存器，在x86平台下对应ip寄存器，amd64上则是rip。除了个别跳转之外，手写 plan9 汇编代码时，很少用到PC寄存器。</li>
+</ul>
+<p>通过上面的讲解，想必已经对4个核心寄存器的区别有了一定的认识（或者是更加的迷惑、一头雾水）。那么，需要留意的是：如果是在分析编译输出的汇编代码时，要重点看SP、SB寄存器（FP寄存器在这里是看不到的）。如果是，在手写汇编代码，那么要重点看FP、SP寄存器。</p>
+<h3 id="3-2-1-伪寄存器的内存模型"><a href="#3-2-1-伪寄存器的内存模型" class="headerlink" title="3.2.1 伪寄存器的内存模型"></a>3.2.1 伪寄存器的内存模型</h3><p>下图描述了栈桢与各个寄存器的内存关系模型，值得注意的是要站在callee的角度来看。<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2021/11/1253919222.jpg"></p>
+<p>有一点需要注意的是，return addr也是在caller的栈上的，不过往栈上插return addr的过程是由CALL指令完成的（在分析汇编时，是看不到关于addr相关空间信息的。在分配栈空间时，addr所占用空间大小不包含在栈帧大小内）。</p>
+<p>在AMD64环境，伪PC寄存器其实是IP指令计数器寄存器的别名。伪FP寄存器对应的是caller函数的帧指针，一般用来访问callee函数的入参参数和返回值。伪SP栈指针对应的是当前callee函数栈帧的底部（不包括参数和返回值部分），一般用于定位局部变量。伪SP是一个比较特殊的寄存器，因为还存在一个同名的SP真寄存器，真SP寄存器对应的是栈的顶部。</p>
+<p>在编写Go汇编时，当需要区分伪寄存器和真寄存器的时候只需要记住一点：伪寄存器一般需要一个标识符和偏移量为前缀，如果没有标识符前缀则是真寄存器。比如(SP)、+8(SP)没有标识符前缀为真SP寄存器，而a(SP)、b+8(SP)有标识符为前缀表示伪寄存器。</p>
+<h3 id="3-2-2-几点说明"><a href="#3-2-2-几点说明" class="headerlink" title="3.2.2 几点说明"></a>3.2.2 几点说明</h3><p>我们这里对容易混淆的几点简单进行说明：</p>
+<ul>
+<li>伪SP和硬件SP不是一回事，在手写汇编代码时，伪SP和硬件SP的区分方法是看该SP前是否有symbol。如果有 symbol，那么即为伪寄存器，如果没有，那么说明是硬件SP寄存器。</li>
+<li>伪SP和FP的相对位置是会变的，所以不应该尝试用伪SP寄存器去找那些用FP+offset来引用的值，例如函数的入参和返回值。</li>
+<li>官方文档中说的伪SP指向stack的top，可能是有问题的。其指向的局部变量位置实际上是整个栈的栈底（除caller BP之外），所以说bottom更合适一些。</li>
+<li>在go tool objdump&#x2F;go tool compile -S输出的代码中，是没有伪SP和FP寄存器的，我们上面说的区分伪SP和硬件SP寄存器的方法，对于上述两个命令的输出结果是没法使用的。在编译和反汇编的结果中，只有真实的SP寄存器。</li>
+</ul>
+<h3 id="3-2-3-IA64和plan9的对应关系"><a href="#3-2-3-IA64和plan9的对应关系" class="headerlink" title="3.2.3 IA64和plan9的对应关系"></a>3.2.3 IA64和plan9的对应关系</h3><p>在plan9汇编里还可以直接使用的amd64的通用寄存器，应用代码层面会用到的通用寄存器主要是: rax, rbx, rcx, rdx, rdi, rsi, r8~r15 这些寄存器，虽然rbp和rsp也可以用，不过bp和sp会被用来管理栈顶和栈底，最好不要拿来进行运算。</p>
+<p>plan9中使用寄存器不需要带r或e的前缀，例如rax，只要写AX即可:<br>MOVQ $101, AX &#x3D; mov rax, 101</p>
+<p>下面是通用通用寄存器的名字在 IA64 和 plan9 中的对应关系:<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2021/11/3170055047.jpg"></p>
+<h2 id="3-3-常用操作指令"><a href="#3-3-常用操作指令" class="headerlink" title="3.3 常用操作指令"></a>3.3 常用操作指令</h2><p>下面列出了常用的几个汇编指令（指令后缀<code>Q</code> 说明是64位上的汇编指令）</p>
+<table>
+<thead>
+<tr>
+<th align="center">助记符</th>
+<th align="center">指令种类</th>
+<th align="center">用途</th>
+<th align="center">示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><code>MOVQ</code></td>
+<td align="center">传送</td>
+<td align="center">数据传送</td>
+<td align="center">MOVQ 48, AX &#x2F;&#x2F; 把48传送到AX</td>
+</tr>
+<tr>
+<td align="center"><code>LEAQ</code></td>
+<td align="center">传送</td>
+<td align="center">地址传送</td>
+<td align="center">LEAQ AX, BX &#x2F;&#x2F; 把AX有效地址传送到BX</td>
+</tr>
+<tr>
+<td align="center"><code>PUSHQ</code></td>
+<td align="center">传送</td>
+<td align="center">栈压入</td>
+<td align="center">PUSHQ AX &#x2F;&#x2F; 将AX内容送入栈顶位置</td>
+</tr>
+<tr>
+<td align="center"><code>POPQ</code></td>
+<td align="center">传送</td>
+<td align="center">栈弹出</td>
+<td align="center">POPQ AX &#x2F;&#x2F; 弹出栈顶数据后修改栈顶指针</td>
+</tr>
+<tr>
+<td align="center"><code>ADDQ</code></td>
+<td align="center">运算</td>
+<td align="center">相加并赋值</td>
+<td align="center">ADDQ BX, AX &#x2F;&#x2F; 等价于 AX+&#x3D;BX</td>
+</tr>
+<tr>
+<td align="center"><code>SUBQ</code></td>
+<td align="center">运算</td>
+<td align="center">相减并赋值</td>
+<td align="center">SUBQ BX, AX &#x2F;&#x2F; 等价于 AX-&#x3D;BX</td>
+</tr>
+<tr>
+<td align="center"><code>CMPQ</code></td>
+<td align="center">运算</td>
+<td align="center">比较大小</td>
+<td align="center">CMPQ SI CX &#x2F;&#x2F; 比较SI和CX的大小</td>
+</tr>
+<tr>
+<td align="center"><code>CALL</code></td>
+<td align="center">转移</td>
+<td align="center">调用函数</td>
+<td align="center">CALL runtime.printnl(SB) &#x2F;&#x2F; 发起调用</td>
+</tr>
+<tr>
+<td align="center"><code>JMP</code></td>
+<td align="center">转移</td>
+<td align="center">无条件转移指令</td>
+<td align="center">JMP 0x0185 &#x2F;&#x2F;无条件转至0x0185地址处</td>
+</tr>
+<tr>
+<td align="center"><code>JLS</code></td>
+<td align="center">转移</td>
+<td align="center">条件转移指令</td>
+<td align="center">JLS 0x0185 &#x2F;&#x2F;左边小于右边，则跳到0x0185</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>call指令 首先会把rip寄存器中的值入栈，然后设置rip值为目标地址，又因为rip寄存器决定了下一条需要执行的指令，所以当CPU执行完当前call指令后就会跳转到目标地址去执行<br>ret指令 从被调用函数返回调用函数，它的实现原理是把call指令入栈的返回地址弹出给rip寄存器</p>
+</blockquote>
+<h1 id="4-汇编分析"><a href="#4-汇编分析" class="headerlink" title="4. 汇编分析"></a>4. 汇编分析</h1><p>说了那么多，it is code show time。</p>
+<h2 id="4-1-如何输出Go汇编"><a href="#4-1-如何输出Go汇编" class="headerlink" title="4.1 如何输出Go汇编"></a>4.1 如何输出Go汇编</h2><p>对于写好的go源码，生成对应的Go汇编，大概有下面几种</p>
+<ul>
+<li>方法1<br>先使用 <code>go build -gcflags &quot;-N -l&quot; main.go</code> 生成对应的可执行二进制文件<br>再使用 <code>go tool objdump -s &quot;main\.&quot; main</code> 反编译获取对应的汇编</li>
+</ul>
+<p>反编译时<br><code>&quot;main\.&quot;</code> 表示只输出main包中相关的汇编<br><code>&quot;main\.main&quot;</code> 则表示只输出main包中main方法相关的汇编</p>
+<ul>
+<li>方法2<br>使用 <code>go tool compile -S -N -l main.go</code> 这种方式直接输出汇编</li>
+<li>方法3<br>使用<code>go build -gcflags=&quot;-N -l -S&quot; main.go</code> 直接输出汇编</li>
+</ul>
+<p>注意：<br>在使用这些命令时，加上对应的flag，否则某些逻辑会被编译器优化掉，而看不到对应完整的汇编代码</p>
+<blockquote>
+<p>-l 禁止内联<br>-N 编译时，禁止优化<br>-S 输出汇编代码</p>
+</blockquote>
+<h2 id="4-2-Go汇编示例"><a href="#4-2-Go汇编示例" class="headerlink" title="4.2 Go汇编示例"></a>4.2 Go汇编示例</h2><p>go示例代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">func add(a, b int) int&#123;</span><br><span class="line">        sum := 0 // 不设置该局部变量sum，add栈空间大小会是0</span><br><span class="line">        sum = a+b</span><br><span class="line">        return sum</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func main()&#123;</span><br><span class="line">        println(add(1,2))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译go源代码，输出汇编</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go tool compile -N -l -S main.go</span><br></pre></td></tr></table></figure>
+
+<p>截取主要汇编如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">&quot;&quot;.add STEXT nosplit size=60 args=0x18 locals=0x10</span><br><span class="line">        0x0000 00000 (main.go:3)        TEXT    &quot;&quot;.add(SB), NOSPLIT, $16-24</span><br><span class="line">        0x0000 00000 (main.go:3)        SUBQ    $16, SP  ;;生成add栈空间</span><br><span class="line">        0x0004 00004 (main.go:3)        MOVQ    BP, 8(SP)</span><br><span class="line">        0x0009 00009 (main.go:3)        LEAQ    8(SP), BP</span><br><span class="line">    ;; ...omitted FUNCDATA stuff...</span><br><span class="line">        0x000e 00014 (main.go:3)        MOVQ    $0, &quot;&quot;.~r2+40(SP) ;;初始化返回值</span><br><span class="line">        0x0017 00023 (main.go:4)        MOVQ    $0, &quot;&quot;.sum(SP) ;;局部变量sum赋为0</span><br><span class="line">        0x001f 00031 (main.go:5)        MOVQ    &quot;&quot;.a+24(SP), AX  ;;取参数a</span><br><span class="line">        0x0024 00036 (main.go:5)        ADDQ    &quot;&quot;.b+32(SP), AX ;;等价于AX=a+b</span><br><span class="line">        0x0029 00041 (main.go:5)        MOVQ    AX, &quot;&quot;.sum(SP)  ;;赋值局部变量sum</span><br><span class="line">        0x002d 00045 (main.go:6)        MOVQ    AX, &quot;&quot;.~r2+40(SP) ;;设置返回值</span><br><span class="line">        0x0032 00050 (main.go:6)        MOVQ    8(SP), BP</span><br><span class="line">        0x0037 00055 (main.go:6)        ADDQ    $16, SP ;;清除add栈空间</span><br><span class="line">        0x003b 00059 (main.go:6)        RET</span><br><span class="line">    ......</span><br><span class="line">   </span><br><span class="line">&quot;&quot;.main STEXT size=107 args=0x0 locals=0x28</span><br><span class="line">        0x0000 00000 (main.go:9)        TEXT    &quot;&quot;.main(SB), $40-0</span><br><span class="line">    ......</span><br><span class="line">        0x000f 00015 (main.go:9)        SUBQ    $40, SP ;; 生成main栈空间</span><br><span class="line">        0x0013 00019 (main.go:9)        MOVQ    BP, 32(SP)</span><br><span class="line">        0x0018 00024 (main.go:9)        LEAQ    32(SP), BP</span><br><span class="line">    ;; ...omitted FUNCDATA stuff...</span><br><span class="line">        0x001d 00029 (main.go:10)       MOVQ    $1, (SP) ;;add入参：1</span><br><span class="line">        0x0025 00037 (main.go:10)       MOVQ    $2, 8(SP) ;;add入参：2</span><br><span class="line">        0x002e 00046 (main.go:10)       CALL    &quot;&quot;.add(SB) ;;调用add函数</span><br><span class="line">        0x0033 00051 (main.go:10)       MOVQ    16(SP), AX</span><br><span class="line">        0x0038 00056 (main.go:10)       MOVQ    AX, &quot;&quot;..autotmp_0+24(SP)</span><br><span class="line">        0x003d 00061 (main.go:10)       CALL    runtime.printlock(SB)</span><br><span class="line">        0x0042 00066 (main.go:10)       MOVQ    &quot;&quot;..autotmp_0+24(SP), AX</span><br><span class="line">        0x0047 00071 (main.go:10)       MOVQ    AX, (SP)</span><br><span class="line">        0x004b 00075 (main.go:10)       CALL    runtime.printint(SB)</span><br><span class="line">        0x0050 00080 (main.go:10)       CALL    runtime.printnl(SB)</span><br><span class="line">        0x0055 00085 (main.go:10)       CALL    runtime.printunlock(SB)</span><br><span class="line">        0x005a 00090 (main.go:11)       MOVQ    32(SP), BP</span><br><span class="line">        0x005f 00095 (main.go:11)       ADDQ    $40, SP ;;清除main栈空间</span><br><span class="line">        0x0063 00099 (main.go:11)       RET</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>这里列举了一个简单的int类型<code>加法</code>示例，实际开发中会遇到各种参数类型，要复杂的多，这里只是抛砖引玉 :)</p>
+<h2 id="4-3-Go汇编解析"><a href="#4-3-Go汇编解析" class="headerlink" title="4.3 Go汇编解析"></a>4.3 Go汇编解析</h2><p>针对4.2输出汇编，对重要核心代码进行分析。</p>
+<h3 id="4-3-1-add函数汇编解析"><a href="#4-3-1-add函数汇编解析" class="headerlink" title="4.3.1 add函数汇编解析"></a>4.3.1 add函数汇编解析</h3><ul>
+<li><code>TEXT &quot;&quot;.add(SB), NOSPLIT|ABIInternal, $16-24</code></li>
+</ul>
+<p><code>TEXT &quot;&quot;.add</code> TEXT 指令声明了 <code>&quot;&quot;.add</code> 是 .text 代码段的一部分，并表明跟在这个声明后的是函数的函数体。在链接期，<code>&quot;&quot;</code>这个空字符会被替换为当前的包名: 也就是说，<code>&quot;&quot;.add</code> 在链接到二进制文件后会变成 main.add</p>
+<p><code>(SB)</code> SB 是一个虚拟的伪寄存器，保存静态基地址(static-base) 指针，即我们程序地址空间的开始地址。 <code>&quot;&quot;.add(SB)</code> 表明我们的符号位于某个固定的相对地址空间起始处的偏移位置 (最终是由链接器计算得到的)。换句话来讲，它有一个直接的绝对地址: 是一个全局的函数符号。</p>
+<p><code>NOSPLIT:</code> 向编译器表明不应该插入 stack-split 的用来检查栈需要扩张的前导指令。在我们 add 函数的这种情况下，编译器自己帮我们插入了这个标记: 它足够聪明地意识到，由于 add 没有任何局部变量且没有它自己的栈帧，所以一定不会超出当前的栈。不然，每次调用函数时，在这里执行栈检查就是完全浪费 CPU 时间了。</p>
+<p><code>$0-16</code><br>$16 代表即将分配的栈帧大小（<code>16字节=caller BP地址大小8字节+局部变量sum大小8字节</code>）<br>- 只是个分隔符（固定格式）<br>$24 指定了调用方传入的参数+返回值大小（24字节&#x3D;入参a、b大小<code>8字节*2</code>+<code>返回值8字节</code>）</p>
+<blockquote>
+<p>通常来讲，帧大小后一般都跟随着一个参数大小，用减号分隔。(这不是一个减法操作，只是一种特殊的语法) 帧大小 $24-8 意味着这个函数有24个字节的帧以及8个字节的参数，位于调用者的帧上。如果NOSPLIT没有在TEXT中指定，则必须提供参数大小。对于Go原型的汇编函数，go vet会检查参数大小是否正确。</p>
+<p>In the general case, the frame size is followed by an argument size, separated by a minus sign. (It’s not a subtraction, just idiosyncratic syntax.) The frame size $24-8 states that the function has a 24-byte frame and is called with 8 bytes of argument, which live on the caller’s frame. If NOSPLIT is not specified for the TEXT, the argument size must be provided. For assembly functions with Go prototypes, go vet will check that the argument size is correct.</p>
+</blockquote>
+<ul>
+<li><code>SUBQ $16, SP</code><br>SP为栈顶指针，该语句等价于 SP-&#x3D;16（由于栈空间是向下增长的，所以开辟栈空间时为减操作），表示生成16字节大小的栈空间。</li>
+<li><code>MOVQ $0, &quot;&quot;.~r2+40(SP)</code><br>此时的SP为add函数栈的栈顶指针，40(SP)的位置则是add返回值的位置，该位置位于main函数栈空间内。<br>该语句设置返回值类型的0值，即初始化返回值，防止得到脏数据（返回值类型为int，int的0值为0）。</li>
+<li><code>MOVQ &quot;&quot;.a+24(SP), AX</code><br>从main函数栈空间获取入参a的值，存到寄存器AX</li>
+<li><code>ADDQ &quot;&quot;.b+32(SP), AX</code><br>从main函数栈空间获取入参b的值，与寄存器AX中存储的a值相加，结果存到AX。<br>相当于 AX&#x3D;a+b</li>
+<li><code>MOVQ AX, &quot;&quot;.~r2+40(SP)</code><br>把a+b的结果放到main函数栈中, add(a+b)返回值所在的位置</li>
+<li><code>ADDQ $16, SP</code><br>归还add函数占用的栈空间</li>
+</ul>
+<h3 id="4-3-2-函数栈桢结构模型"><a href="#4-3-2-函数栈桢结构模型" class="headerlink" title="4.3.2 函数栈桢结构模型"></a>4.3.2 函数栈桢结构模型</h3><p>根据4.2对应汇编绘制的函数栈桢结构模型<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2021/11/2414158244.jpg"></p>
+<p>还记得前面提到的，Go汇编使用的是<code>caller-save</code>模式，被调用函数的参数、返回值、栈位置都需要由调用者维护、准备吗？</p>
+<p>在函数栈桢结构中可以看到，add()函数的入参以及返回值都由调用者main()函数维护。<br>也正是因为如此，GO有了其他语言不具有的，支持多个返回值的特性。</p>
+<h2 id="4-4-Go汇编语法"><a href="#4-4-Go汇编语法" class="headerlink" title="4.4 Go汇编语法"></a>4.4 Go汇编语法</h2><p>这里重点讲一下函数声明、变量声明。</p>
+<h3 id="4-4-1-函数声明"><a href="#4-4-1-函数声明" class="headerlink" title="4.4.1 函数声明"></a>4.4.1 函数声明</h3><p>来看一个典型的Go汇编函数定义</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">// func add(a, b int) int</span><br><span class="line">// 该add函数声明定义在同一个 package name 下的任意 .go文件中</span><br><span class="line">// 只有函数头，没有实现</span><br><span class="line"></span><br><span class="line">// add函数的Go汇编实现</span><br><span class="line">// pkgname 默认是  &quot;&quot;</span><br><span class="line">TEXT pkgname·add(SB), NOSPLIT, $16-24</span><br><span class="line">    MOVQ a+0(FP), AX</span><br><span class="line">    ADDQ b+8(FP), AX</span><br><span class="line">    MOVQ AX, ret+16(FP)</span><br><span class="line">    RET</span><br></pre></td></tr></table></figure>
+
+<p>Go汇编实现为什么是 <code>TEXT</code> 开头？<br>仔细观察上面的进程内存布局图就会发现，我们的代码在是存储在.text段中的，这里也就是一种约定俗成的起名方式。实际上在plan9中TEXT是一个指令，用来定义一个函数。</p>
+<p>定义中的pkgname是可以省略的，(非想写也可以写上，不过写上pkgname的话，在重命名package之后还需要改代码，默认为<code>&quot;&quot;</code>) 编译器会在链接期自动加上所属的包名称。</p>
+<p>中点 <code>·</code> 比较特殊，是一个unicode的中点，该点在mac下的输入方法是 option+shift+9。在程序被链接之后，所有的中点<code>·</code>都会被替换为句号<code>.</code>，比如你的方法是<code>runtime·main</code>，在编译之后的程序里的符号则是<code>runtime.main</code>。</p>
+<p>简单总结一下, Go汇编实现函数声明，格式为:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">  静态基地址(static-base) 指针</span><br><span class="line">                  |        </span><br><span class="line">                  |         add函数入参+返回值总大小</span><br><span class="line">                  |               | </span><br><span class="line">TEXT pkgname·add(SB),NOSPLIT,$16-24</span><br><span class="line">      |      |                |</span><br><span class="line">函数所属包名  函数名          add函数栈帧大小</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>函数栈帧大小：局部变量+可能需要的额外调用函数的参数空间的总大小，不包括调用其它函数时的ret address的大小。</li>
+<li>(SB): SB 是一个虚拟寄存器，保存了静态基地址(static-base) 指针，即我们程序地址空间的开始地址。 <code>&quot;&quot;.add(SB)</code> 表明我们的符号位于某个固定的相对地址空间起始处的偏移位置 (最终是由链接器计算得到的)。换句话来讲，它有一个直接的绝对地址: 是一个全局的函数符号。</li>
+<li>NOSPLIT: 向编译器表明，不应该插入stack-split的用来检查栈需要扩张的前导指令。在我们add函数的这种情况下，编译器自己帮我们插入了这个标记: 它足够聪明地意识到，add不会超出当前的栈，因此没必要调用函数时在这里执行栈检查。</li>
+</ul>
+<h3 id="4-4-2-变量声明"><a href="#4-4-2-变量声明" class="headerlink" title="4.4.2 变量声明"></a>4.4.2 变量声明</h3><p>汇编里的全局变量，一般是存储在<code>.rodata</code>或者<code>.data</code>段中。对应到Go代码，就是已初始化过的全局的const、var变量&#x2F;常量。</p>
+<p>使用DATA结合GLOBL来定义一个变量。</p>
+<p>DATA的用法为:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">DATA symbol+offset(SB)/width, value</span><br></pre></td></tr></table></figure>
+
+<p>大多数参数都是字面意思，不过这个offset需要注意：其含义是该值相对于符号symbol的偏移，而不是相对于全局某个地址的偏移。</p>
+<p>GLOBL汇编指令用于定义名为symbol的全局变量，变量对应的内存宽度为width，内存宽度部分必须用常量初始化。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GLOBL ·symbol(SB), width</span><br></pre></td></tr></table></figure>
+
+<p>下面是定义了多个变量的例子:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">DATA ·age+0(SB)/4, $8  ;; 数值8为 4字节</span><br><span class="line">GLOBL ·age(SB), RODATA, $4</span><br><span class="line"></span><br><span class="line">DATA ·pi+0(SB)/8, $3.1415926 ;; 数值3.1415926为float64, 8字节</span><br><span class="line">GLOBL ·pi(SB), RODATA, $8</span><br><span class="line"></span><br><span class="line">DATA ·year+0(SB)/4, $2020 ;; 数值2020为 4字节</span><br><span class="line">GLOBL ·year(SB), RODATA, $4</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">;; 变量hello 使用2个DATA来定义</span><br><span class="line">DATA ·hello+0(SB)/8, $&quot;hello my&quot; ;; `hello my` 共8个字节</span><br><span class="line">DATA ·hello+8(SB)/8, $&quot;   world&quot; ;; `   world` 共8个字节(3个空格)</span><br><span class="line">GLOBL ·hello(SB), RODATA, $16 ;; `hello my   world`  共16个字节</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">DATA ·hello&lt;&gt;+0(SB)/8, $&quot;hello my&quot; ;; `hello my` 共8个字节</span><br><span class="line">DATA ·hello&lt;&gt;+8(SB)/8, $&quot;   world&quot; ;; `   world` 共8个字节(3个空格)</span><br><span class="line">GLOBL ·hello&lt;&gt;(SB), RODATA, $16 ;; `hello my   world`  共16个字节</span><br></pre></td></tr></table></figure>
+
+<p>大部分都比较好理解，不过这里引入了新的标记<code>&lt;&gt;</code>，这个跟在符号名之后，表示该全局变量只在当前文件中生效，类似于C语言中的 static。如果在另外文件中引用该变量的话，会报 relocation target not found 的错误。</p>
+<h1 id="5-手写汇编实现功能"><a href="#5-手写汇编实现功能" class="headerlink" title="5. 手写汇编实现功能"></a>5. 手写汇编实现功能</h1><p>在Go源码中会看到一些汇编写的代码，这些代码跟其他go代码一起组成了整个go的底层功能实现。<br>下面，我们通过一个简单的Go汇编代码示例来实现两数相加功能。</p>
+<h2 id="5-1-使用Go汇编实现add函数"><a href="#5-1-使用Go汇编实现add函数" class="headerlink" title="5.1 使用Go汇编实现add函数"></a>5.1 使用Go汇编实现add函数</h2><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2021/11/570367788.jpg">
+
+<p>Go代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">func add(a, b int64) int64</span><br><span class="line"></span><br><span class="line">func main()&#123;</span><br><span class="line">        println(add(2,3))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Go源码中add()函数只有函数签名，没有具体的实现（使用GO汇编实现）</p>
+<p>使用Go汇编实现的add()函数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">TEXT ·add(SB), $0-24 ;; add栈空间为0，入参+返回值大小=24字节</span><br><span class="line">        MOVQ x+0(FP), AX ;; 从main中取参数：2</span><br><span class="line">        ADDQ y+8(FP), AX ;; 从main中取参数：3</span><br><span class="line"></span><br><span class="line">        MOVQ AX, ret+16(FP) ;; 保存结果到返回值</span><br><span class="line">       </span><br><span class="line">        RET</span><br></pre></td></tr></table></figure>
+
+<p>把Go源码与Go汇编编译到一起(我这里，这两个文件在同一个目录)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go build -gcflags &quot;-N -l&quot; .</span><br></pre></td></tr></table></figure>
+
+<p>我这里目录为demo1，所以得到可执行程序 demo1，运行得到结果：5</p>
+<h2 id="5-2-反编译可执行程序"><a href="#5-2-反编译可执行程序" class="headerlink" title="5.2 反编译可执行程序"></a>5.2 反编译可执行程序</h2><p>对5.1中得到的可执行程序demo1使用objdump进行反编译，获取汇编代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go tool objdump -s &quot;main\.&quot; demo1</span><br></pre></td></tr></table></figure>
+
+<p>得到汇编</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">......</span><br><span class="line">TEXT main.main(SB) /root/go/src/demo1/main.go</span><br><span class="line">  main.go:5   0x4581d0     64488b0c25f8ffffff      MOVQ FS:0xfffffff8, CX</span><br><span class="line">  main.go:5   0x4581d9     483b6110                CMPQ 0x10(CX), SP</span><br><span class="line">  main.go:5   0x4581dd     7655                    JBE 0x458234</span><br><span class="line">  main.go:5   0x4581df     4883ec28                SUBQ $0x28, SP ;;生成main栈桢</span><br><span class="line">  main.go:5   0x4581e3     48896c2420              MOVQ BP, 0x20(SP)</span><br><span class="line">  main.go:5   0x4581e8     488d6c2420              LEAQ 0x20(SP), BP</span><br><span class="line">  main.go:6   0x4581ed     48c7042402000000        MOVQ $0x2, 0(SP) ;;参数值 2</span><br><span class="line">  main.go:6   0x4581f5     48c744240803000000      MOVQ $0x3, 0x8(SP) ;;参数值 3</span><br><span class="line">  main.go:6   0x4581fe     e83d000000              CALL main.add(SB);;call add</span><br><span class="line">  main.go:6   0x458203     488b442410              MOVQ 0x10(SP), AX</span><br><span class="line">  main.go:6   0x458208     4889442418              MOVQ AX, 0x18(SP)</span><br><span class="line">  main.go:6   0x45820d     e8fe2dfdff              CALL runtime.printlock(SB)</span><br><span class="line">  main.go:6   0x458212     488b442418              MOVQ 0x18(SP), AX</span><br><span class="line">  main.go:6   0x458217     48890424                MOVQ AX, 0(SP)</span><br><span class="line">  main.go:6   0x45821b     e87035fdff              CALL runtime.printint(SB)</span><br><span class="line">  main.go:6   0x458220     e87b30fdff              CALL runtime.printnl(SB)</span><br><span class="line">  main.go:6   0x458225     e8662efdff              CALL runtime.printunlock(SB)</span><br><span class="line">  main.go:7   0x45822a     488b6c2420              MOVQ 0x20(SP), BP</span><br><span class="line">  main.go:7   0x45822f     4883c428                ADDQ $0x28, SP</span><br><span class="line">  main.go:7   0x458233     c3                      RET</span><br><span class="line">  main.go:5   0x458234     e89797ffff              CALL runtime.morestack_noctxt(SB)</span><br><span class="line">  main.go:5   0x458239     eb95                    JMP main.main(SB)</span><br><span class="line"></span><br><span class="line">;; 反编译得到的汇编与add_amd64.s文件中的汇编大致操作一致</span><br><span class="line">TEXT main.add(SB) /root/go/src/demo1/add_amd64.s</span><br><span class="line">  add_amd64.s:2   0x458240    488b442408    MOVQ 0x8(SP), AX ;; 获取第一个参数</span><br><span class="line">  add_amd64.s:3   0x458245    4803442410    ADDQ 0x10(SP), AX ;;参数a+参数b</span><br><span class="line">  add_amd64.s:5   0x45824a    4889442418    MOVQ AX, 0x18(SP) ;;保存计算结果</span><br><span class="line">  add_amd64.s:7   0x45824f    c3            RET</span><br></pre></td></tr></table></figure>
+
+<p>通过上面操作，可知：</p>
+<ol>
+<li>(FP)伪寄存器，只有在编写Go汇编代码时使用。FP伪寄存器指向caller传递给callee的第一个参数</li>
+<li>使用 go tool compile &#x2F; go tool objdump 得到的汇编中看不到(FP)寄存器的踪影</li>
+</ol>
+<h1 id="6-Go调试工具"><a href="#6-Go调试工具" class="headerlink" title="6. Go调试工具"></a>6. Go调试工具</h1><p>这里推荐2个Go代码调试工具。</p>
+<h2 id="6-1-gdb调试Go代码"><a href="#6-1-gdb调试Go代码" class="headerlink" title="6.1 gdb调试Go代码"></a>6.1 gdb调试Go代码</h2><p>测试代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">type Ier interface&#123;</span><br><span class="line">        add(a, b int) int</span><br><span class="line">        sub(a, b int) int</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">type data struct&#123;</span><br><span class="line">        a, b int</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (*data) add(a, b int) int&#123;</span><br><span class="line">        return a+b</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (*data) sub(a, b int) int&#123;</span><br><span class="line">        return a-b</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func main()&#123;</span><br><span class="line">        var t Ier = &amp;data&#123;3,4&#125;</span><br><span class="line"></span><br><span class="line">        println(t.add(1,2))</span><br><span class="line">        println(t.sub(3,2))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译 <code>go build -gcflags &quot;-N -l&quot; -o main</code></p>
+<p>使用GDB调试</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line">&gt; gdb main</span><br><span class="line"></span><br><span class="line">GNU gdb (GDB) Red Hat Enterprise Linux 7.6.1-80.el7</span><br><span class="line">Copyright (C) 2013 Free Software Foundation, Inc.</span><br><span class="line">License GPLv3+: GNU GPL version 3 or later http://gnu.org/licenses/gpl.html</span><br><span class="line">This is free software: you are free to change and redistribute it.</span><br><span class="line">There is NO WARRANTY, to the extent permitted by law.  Type &quot;show copying&quot;</span><br><span class="line">and &quot;show warranty&quot; for details.</span><br><span class="line">This GDB was configured as &quot;x86_64-redhat-linux-gnu&quot;.</span><br><span class="line">For bug reporting instructions, please see:</span><br><span class="line">&lt;http://www.gnu.org/software/gdb/bugs/&gt;...</span><br><span class="line">Reading symbols from /root/go/src/interface/main...done.</span><br><span class="line">Loading Go Runtime support.</span><br><span class="line">(gdb) list   // 显示源码</span><br><span class="line">14      func (*data) add(a, b int) int&#123;</span><br><span class="line">15              return a+b</span><br><span class="line">16      &#125;</span><br><span class="line">17</span><br><span class="line">18      func (*data) sub(a, b int) int&#123;</span><br><span class="line">19              return a-b</span><br><span class="line">20      &#125;</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23      func main()&#123;</span><br><span class="line">(gdb) list</span><br><span class="line">24              var t Ier = &amp;data&#123;3,4&#125;</span><br><span class="line">25</span><br><span class="line">26              println(t.add(1,2))</span><br><span class="line">27              println(t.sub(3,2))</span><br><span class="line">28      &#125;</span><br><span class="line">29</span><br><span class="line">(gdb) b 26  // 在源码26行处设置断点</span><br><span class="line">Breakpoint 1 at 0x45827c: file /root/go/src/interface/main.go, line 26.</span><br><span class="line">(gdb) r</span><br><span class="line">Starting program: /root/go/src/interface/main</span><br><span class="line"></span><br><span class="line">Breakpoint 1, main.main () at /root/go/src/interface/main.go:26</span><br><span class="line">26              println(t.add(1,2))</span><br><span class="line">(gdb) info locals  // 显示变量</span><br><span class="line">t = &#123;tab = 0x487020 &lt;data,main.Ier&gt;, data = 0xc000096000&#125;</span><br><span class="line">(gdb) ptype t  // 打印t的结构</span><br><span class="line">type = struct runtime.iface &#123;</span><br><span class="line">    runtime.itab *tab;</span><br><span class="line">    void *data;</span><br><span class="line">&#125;</span><br><span class="line">(gdb) p *t.tab.inter  // 打印t.tab.inter指针指向的数据</span><br><span class="line">$2 = &#123;typ = &#123;size = 16, ptrdata = 16, hash = 2491815843, tflag = 7 &#x27;\a&#x27;, align = 8 &#x27;\b&#x27;, fieldAlign = 8 &#x27;\b&#x27;,</span><br><span class="line">    kind = 20 &#x27;\024&#x27;, equal = &#123;void (void *, void *, bool *)&#125; 0x466ec0,</span><br><span class="line">    gcdata = 0x484351 &quot;\002\003\004\005\006\a\b\t\n\f\r\016\017\020\022\025\026\030\033\034\036\037\&quot;&amp;(,-5&lt;BUXx\216\231\330\335\377&quot;, str = 6568, ptrToThis = 23808&#125;, pkgpath = &#123;bytes = 0x4592b4 &quot;&quot;&#125;, mhdr =  []runtime.imethod = &#123;&#123;name = 277,</span><br><span class="line">      ityp = 48608&#125;, &#123;name = 649, ityp = 48608&#125;&#125;&#125;</span><br><span class="line">(gdb) disass  // 显示汇编</span><br><span class="line">Dump of assembler code for function main.main:</span><br><span class="line">   0x0000000000458210 &lt;+0&gt;:     mov    %fs:0xfffffffffffffff8,%rcx</span><br><span class="line">   0x0000000000458219 &lt;+9&gt;:     cmp    0x10(%rcx),%rsp</span><br><span class="line">   0x000000000045821d &lt;+13&gt;:    jbe    0x458324 &lt;main.main+276&gt;</span><br><span class="line">   0x0000000000458223 &lt;+19&gt;:    sub    $0x50,%rsp</span><br><span class="line">   0x0000000000458227 &lt;+23&gt;:    mov    %rbp,0x48(%rsp)</span><br><span class="line">   0x000000000045822c &lt;+28&gt;:    lea    0x48(%rsp),%rbp</span><br><span class="line">   0x0000000000458231 &lt;+33&gt;:    lea    0x10dc8(%rip),%rax        # 0x469000</span><br><span class="line">   0x0000000000458238 &lt;+40&gt;:    mov    %rax,(%rsp)</span><br><span class="line">   0x000000000045823c &lt;+44&gt;:    callq  0x40a5c0 &lt;runtime.newobject&gt;</span><br></pre></td></tr></table></figure>
+
+<p>常用的gdb调试命令</p>
+<ul>
+<li>run</li>
+<li>continue</li>
+<li>break</li>
+<li>backtrace 与 frame</li>
+<li>info break、locals</li>
+<li>list 命令</li>
+<li>print 和 ptype 命令</li>
+<li>disass</li>
+</ul>
+<p>除了gdb，另外推荐一款gdb的增强版调试工具cgdb</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://cgdb.github.io/">https://cgdb.github.io/</a></p>
+</blockquote>
+<p>效果如下图所示，分两个窗口：上面显示源代码，下面是具体的命令行调试界面(跟gdb一样)<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2021/11/2465963826.jpg"></p>
+<h2 id="6-2-delve调试代码"><a href="#6-2-delve调试代码" class="headerlink" title="6.2 delve调试代码"></a>6.2 delve调试代码</h2><p>delve项目地址</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://github.com/go-delve/delve">https://github.com/go-delve/delve</a></p>
+</blockquote>
+<p>带图形化界面的dlv项目地址</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://github.com/aarzilli/gdlv">https://github.com/aarzilli/gdlv</a></p>
+</blockquote>
+<p>dlv的安装使用，这里不再做过多讲解，感兴趣的可以尝试一下。</p>
+<ul>
+<li>gdb作为调试工具自是不用多说，比较老牌、强大，可以支持多种语言。</li>
+<li>delve则是使用go语言开发的，用来调试go的工具，功能也是十分强大，打印结果可以显示gdb支持不了的东西，这里不再做过多讲解，有兴趣的可以查阅相关资料。</li>
+</ul>
+<h1 id="7-总结"><a href="#7-总结" class="headerlink" title="7. 总结"></a>7. 总结</h1><p>对于Go汇编基础大致需要熟悉下面几个方面<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2021/11/550309980.jpg"></p>
+<p>通过上面的例子相信已经让你对Go的汇编有了一定的理解。当然，对于大部分业务开发人员来说，只要看的懂即可。如果想进一步的了解，可以阅读相关的资料或者书籍。</p>
+<p>最后想说的是：鉴于个人能力有限，在阅读过程中你可能会发现存在的一些问题或者缺陷，欢迎各位大佬指正。如果感兴趣的话，也可以一起私下交流。</p>
+<h1 id="8-参考资料"><a href="#8-参考资料" class="headerlink" title="8. 参考资料"></a>8. 参考资料</h1><p>在整理的过程中，部分参考、引用下面链接地址内容。有一些写的还是不错的，感兴趣的同学可以阅读。</p>
+<p>[1]<a target="_blank" rel="noopener" href="https://github.com/cch123/golang-notes/blob/master/assembly.md">https://github.com/cch123/golang-notes/blob/master/assembly.md</a> plan9 assembly<br>[2]<a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000019753885">https://segmentfault.com/a/1190000019753885</a> 汇编入门<br>[3]<a target="_blank" rel="noopener" href="https://www.davidwong.fr/goasm/">https://www.davidwong.fr/goasm/</a> Go Assembly by Example<br>[4]<a target="_blank" rel="noopener" href="https://juejin.im/post/6844904005630443533#heading-3">https://juejin.im/post/6844904005630443533#heading-3</a><br>[5]<a target="_blank" rel="noopener" href="https://github.com/go-internals-cn/go-internals/blob/master/chapter1_assembly_primer/README.md">https://github.com/go-internals-cn/go-internals/blob/master/chapter1_assembly_primer/README.md</a><br>[6]<a target="_blank" rel="noopener" href="https://lrita.github.io/2017/12/12/golang-asm/">https://lrita.github.io/2017/12/12/golang-asm/</a><br>[7]<a target="_blank" rel="noopener" href="https://chai2010.cn/advanced-go-programming-book/ch3-asm/ch3-01-basic.html">https://chai2010.cn/advanced-go-programming-book/ch3-asm/ch3-01-basic.html</a></p>
+</article><div class="post-copyright"><div class="copyright-cc-box"><i class="anzhiyufont anzhiyu-icon-copyright"></i></div><div class="post-copyright__author_box"><a class="post-copyright__author_img" href="/" title="头像"><img class="post-copyright__author_img_back" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/xiaowangzi.jpg" title="头像" alt="头像"><img class="post-copyright__author_img_front" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/xiaowangzi.jpg" title="头像" alt="头像"></a><div class="post-copyright__author_name">ivansli</div><div class="post-copyright__author_desc">学无止境</div></div><div class="post-copyright__post__info"><a class="post-copyright__original" title="该文章为原创文章，注意版权协议" href="https://blog.ivansli.com/2020/10/12/go-asm-plan9/">原创</a><a class="post-copyright-title"><span onclick="rm.copyPageUrl('https://blog.ivansli.com/2020/10/12/go-asm-plan9/')">初识Golang汇编</span></a></div><div class="post-tools" id="post-tools"><div class="post-tools-left"><div class="rewardLeftButton"><div class="post-reward" onclick="anzhiyu.addRewardMask()"><div class="reward-button button--animated" title="赞赏作者"><i class="anzhiyufont anzhiyu-icon-hand-heart-fill"></i>打赏作者</div><div class="reward-main"><div class="reward-all"><!--span.reward-title 感谢你赐予我前进的力量--><ul class="reward-group"><li class="reward-item"><a href="/img/reward/wechat-small.png" target="_blank"><img class="post-qr-code-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/reward/wechat-small.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/reward/alipay-small.png" target="_blank"><img class="post-qr-code-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/reward/alipay-small.png" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul><!--a.reward-main-btn(href='/about/#about-reward' target='_blank')//.reward-text 赞赏者名单
+//.reward-dec 因为你们的支持让我意识到写文章的价值🙏--></div></div></div><div id="quit-box" onclick="anzhiyu.removeRewardMask()" style="display: none"></div></div><div class="shareRight"><div class="share-link mobile"><div class="share-qrcode"><div class="share-button" title="使用手机访问这篇文章"><i class="anzhiyufont anzhiyu-icon-qrcode"></i></div><div class="share-main"><div class="share-main-all"><div id="qrcode" title="https://blog.ivansli.com/2020/10/12/go-asm-plan9/"></div><div class="reward-dec">使用手机访问这篇文章</div></div></div></div></div><div class="share-link weibo"><a class="share-button" target="_blank" href="https://service.weibo.com/share/share.php?title=初识Golang汇编&amp;url=https://blog.ivansli.com/2020/10/12/go-asm-plan9/&amp;pic=/img/2021/11/58694895.jpg" rel="external nofollow noreferrer noopener"><i class="anzhiyufont anzhiyu-icon-weibo"></i></a></div><div class="share-link copyurl"><div class="share-button" id="post-share-url" title="复制链接" onclick="rm.copyPageUrl()"><i class="anzhiyufont anzhiyu-icon-link"></i></div></div></div></div></div><div class="post-copyright__notice"><span class="post-copyright-info">本文系原创作品，版权所有（禁止转载）</span></div></div><div class="post-tools-right"><div class="tag_share"><div class="post-meta__box"><div class="post-meta__box__tag-list"><a class="post-meta__box__tags" href="/tags/%E7%BC%96%E7%A8%8B%E5%8E%9F%E7%90%86/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>编程原理<span class="tagsPageCount">31</span></a><a class="post-meta__box__tags" href="/tags/golang/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>golang<span class="tagsPageCount">31</span></a></div></div></div><div class="post_share"><div class="social-share" data-image="/img/2024/07/helm.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="/pluginsSrc/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"/><script src="/pluginsSrc/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer="defer"></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2020/10/10/c-history/"><img class="prev-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2021/11/1446861705.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">我眼中的C语言及其起源</div></div></a></div><div class="next-post pull-right"><a href="/2020/10/13/git-history-1/"><img class="next-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2021/11/4218828911.gif" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Git之旅 - 历史起源与特点</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="anzhiyufont anzhiyu-icon-thumbs-up fa-fw" style="font-size: 1.5rem; margin-right: 4px"></i><span>喜欢这篇文章的人也看了</span></div><div class="relatedPosts-list"><div><a href="/2022/10/04/5-ways-generate-distributed-unique-id/" title="分布式ID的5种生成方式以及Go源码中的一种应用"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2022/10/0001.png" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2022-10-04</div><div class="title">分布式ID的5种生成方式以及Go源码中的一种应用</div></div></a></div><div><a href="/2021/11/20/algo-python-vietnam-money/" title="数字转越南语词组实现方法"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/space-man-small.png" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2021-11-20</div><div class="title">数字转越南语词组实现方法</div></div></a></div><div><a href="/2021/01/17/go-1-2/" title="从Go的1-2不等于-1聊起"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/space-man-small.png" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2021-01-17</div><div class="title">从Go的1-2不等于-1聊起</div></div></a></div><div><a href="/2021/01/16/go-atomic/" title="Go中sync&#x2F;atomic原子操作分析"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/space-man-small.png" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2021-01-16</div><div class="title">Go中sync&#x2F;atomic原子操作分析</div></div></a></div><div><a href="/2021/08/14/go-build-register/" title="go build 时注入编译信息"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/space-man-small.png" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2021-08-14</div><div class="title">go build 时注入编译信息</div></div></a></div><div><a href="/2022/03/10/go-build-tag/" title="Go 构建约束的使用方式"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/space-man-small.png" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2022-03-10</div><div class="title">Go 构建约束的使用方式</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="card-content"><div class="author-info__sayhi" id="author-info__sayhi" onclick="anzhiyu.changeSayHelloText()"></div><div class="author-info-avatar"><img class="avatar-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/xiaowangzi.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/><div class="author-status"><img class="g-status" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/goutou.png" ait="status"/></div></div><div class="author-info__description"><div style="line-height:1.38;margin:0.6rem 0;text-align:justify;color:rgba(255, 255, 255, 0.8);">这里有<b style="color:#fff">知识总结</b>和<b style="color:#fff">技术分享</b>。书山有路勤为径，学海无涯苦作舟。<b style="color:#fff">此生也有涯</b>，<b style="color:#fff">此生学无涯</b>。</div></div><div class="author-info__bottom-group"><a class="author-info__bottom-group-left" href="/"><h1 class="author-info__name">ivansli</h1><div class="author-info__desc">学无止境</div></a><div class="card-info-social-icons is-center"><a class="social-icon faa-parent animated-hover" href="https://github.com/coderstart" target="_blank" title="Github"><i class="anzhiyufont anzhiyu-icon-github"></i></a></div></div></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-bars"></i><span>文章目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#0-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%86%99%E6%9C%AC%E6%96%87"><span class="toc-number">1.</span> <span class="toc-text">0. 为什么写本文</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E6%B1%87%E7%BC%96"><span class="toc-number">2.</span> <span class="toc-text">1. 为什么需要汇编</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E7%A8%8B%E5%BA%8F%E7%9A%84%E7%BC%96%E8%AF%91%E8%BF%87%E7%A8%8B"><span class="toc-number">2.1.</span> <span class="toc-text">1.1 程序的编译过程</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E7%A8%8B%E5%BA%8F%E4%B8%8E%E8%BF%9B%E7%A8%8B"><span class="toc-number">3.</span> <span class="toc-text">2. 程序与进程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E7%A8%8B%E5%BA%8F"><span class="toc-number">3.1.</span> <span class="toc-text">2.1 程序</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E8%BF%9B%E7%A8%8B"><span class="toc-number">3.2.</span> <span class="toc-text">2.2 进程</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Go%E6%B1%87%E7%BC%96"><span class="toc-number">4.</span> <span class="toc-text">3. Go汇编</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%87%A0%E4%B8%AA%E6%A6%82%E5%BF%B5"><span class="toc-number">4.1.</span> <span class="toc-text">3.1 几个概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-Go%E7%9A%84%E6%A0%B8%E5%BF%83%E5%AF%84%E5%AD%98%E5%99%A8"><span class="toc-number">4.2.</span> <span class="toc-text">3.2 Go的核心寄存器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E4%BC%AA%E5%AF%84%E5%AD%98%E5%99%A8%E7%9A%84%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B"><span class="toc-number">4.2.1.</span> <span class="toc-text">3.2.1 伪寄存器的内存模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E5%87%A0%E7%82%B9%E8%AF%B4%E6%98%8E"><span class="toc-number">4.2.2.</span> <span class="toc-text">3.2.2 几点说明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-3-IA64%E5%92%8Cplan9%E7%9A%84%E5%AF%B9%E5%BA%94%E5%85%B3%E7%B3%BB"><span class="toc-number">4.2.3.</span> <span class="toc-text">3.2.3 IA64和plan9的对应关系</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%B8%B8%E7%94%A8%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4"><span class="toc-number">4.3.</span> <span class="toc-text">3.3 常用操作指令</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%B1%87%E7%BC%96%E5%88%86%E6%9E%90"><span class="toc-number">5.</span> <span class="toc-text">4. 汇编分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%A6%82%E4%BD%95%E8%BE%93%E5%87%BAGo%E6%B1%87%E7%BC%96"><span class="toc-number">5.1.</span> <span class="toc-text">4.1 如何输出Go汇编</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-Go%E6%B1%87%E7%BC%96%E7%A4%BA%E4%BE%8B"><span class="toc-number">5.2.</span> <span class="toc-text">4.2 Go汇编示例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-Go%E6%B1%87%E7%BC%96%E8%A7%A3%E6%9E%90"><span class="toc-number">5.3.</span> <span class="toc-text">4.3 Go汇编解析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-1-add%E5%87%BD%E6%95%B0%E6%B1%87%E7%BC%96%E8%A7%A3%E6%9E%90"><span class="toc-number">5.3.1.</span> <span class="toc-text">4.3.1 add函数汇编解析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-2-%E5%87%BD%E6%95%B0%E6%A0%88%E6%A1%A2%E7%BB%93%E6%9E%84%E6%A8%A1%E5%9E%8B"><span class="toc-number">5.3.2.</span> <span class="toc-text">4.3.2 函数栈桢结构模型</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-4-Go%E6%B1%87%E7%BC%96%E8%AF%AD%E6%B3%95"><span class="toc-number">5.4.</span> <span class="toc-text">4.4 Go汇编语法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-1-%E5%87%BD%E6%95%B0%E5%A3%B0%E6%98%8E"><span class="toc-number">5.4.1.</span> <span class="toc-text">4.4.1 函数声明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-2-%E5%8F%98%E9%87%8F%E5%A3%B0%E6%98%8E"><span class="toc-number">5.4.2.</span> <span class="toc-text">4.4.2 变量声明</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%89%8B%E5%86%99%E6%B1%87%E7%BC%96%E5%AE%9E%E7%8E%B0%E5%8A%9F%E8%83%BD"><span class="toc-number">6.</span> <span class="toc-text">5. 手写汇编实现功能</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E4%BD%BF%E7%94%A8Go%E6%B1%87%E7%BC%96%E5%AE%9E%E7%8E%B0add%E5%87%BD%E6%95%B0"><span class="toc-number">6.1.</span> <span class="toc-text">5.1 使用Go汇编实现add函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%8F%8D%E7%BC%96%E8%AF%91%E5%8F%AF%E6%89%A7%E8%A1%8C%E7%A8%8B%E5%BA%8F"><span class="toc-number">6.2.</span> <span class="toc-text">5.2 反编译可执行程序</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-Go%E8%B0%83%E8%AF%95%E5%B7%A5%E5%85%B7"><span class="toc-number">7.</span> <span class="toc-text">6. Go调试工具</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-gdb%E8%B0%83%E8%AF%95Go%E4%BB%A3%E7%A0%81"><span class="toc-number">7.1.</span> <span class="toc-text">6.1 gdb调试Go代码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-delve%E8%B0%83%E8%AF%95%E4%BB%A3%E7%A0%81"><span class="toc-number">7.2.</span> <span class="toc-text">6.2 delve调试代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E6%80%BB%E7%BB%93"><span class="toc-number">8.</span> <span class="toc-text">7. 总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#8-%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">9.</span> <span class="toc-text">8. 参考资料</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-history"></i><span>最近发布</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2024/07/07/240707-helm/" title="helm安装、使用及其运行原理"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2024/07/helm.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="helm安装、使用及其运行原理"/></a><div class="content"><a class="title" href="/2024/07/07/240707-helm/" title="helm安装、使用及其运行原理">helm安装、使用及其运行原理</a><time datetime="2024-07-07T01:00:00.000Z" title="发表于 2024-07-07 09:00:00">2024-07-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2023/11/11/theroadtoserfdom/" title="读：哈耶克《到奴役之路》有感"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2023/11/hayeke.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="读：哈耶克《到奴役之路》有感"/></a><div class="content"><a class="title" href="/2023/11/11/theroadtoserfdom/" title="读：哈耶克《到奴役之路》有感">读：哈耶克《到奴役之路》有感</a><time datetime="2023-11-11T01:44:00.000Z" title="发表于 2023-11-11 09:44:00">2023-11-11</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2023/10/07/231007-game-theory3/" title="二人零和博弈与最大最小定理"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2023/09/gametheory-01.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="二人零和博弈与最大最小定理"/></a><div class="content"><a class="title" href="/2023/10/07/231007-game-theory3/" title="二人零和博弈与最大最小定理">二人零和博弈与最大最小定理</a><time datetime="2023-10-07T08:45:00.000Z" title="发表于 2023-10-07 16:45:00">2023-10-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2023/10/07/231007-game-theory2/" title="博弈论对一般问题的建模分析"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2023/09/gametheory-01.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="博弈论对一般问题的建模分析"/></a><div class="content"><a class="title" href="/2023/10/07/231007-game-theory2/" title="博弈论对一般问题的建模分析">博弈论对一般问题的建模分析</a><time datetime="2023-10-07T03:40:00.000Z" title="发表于 2023-10-07 11:40:00">2023-10-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2023/09/18/230918-game-theory/" title="认识博弈论"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/2023/09/gametheory-01.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="认识博弈论"/></a><div class="content"><a class="title" href="/2023/09/18/230918-game-theory/" title="认识博弈论">认识博弈论</a><time datetime="2023-09-18T10:00:00.000Z" title="发表于 2023-09-18 18:00:00">2023-09-18</time></div></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><!-- - let centerImg = theme.footer.socialBar.centerImg ? theme.footer.socialBar.centerImg : theme.avatar.img--><div id="footer_deal"><!-- 左侧图标--><a class="deal_link" href="mailto:gopher001@outlook.com" title="email"><i class="anzhiyufont anzhiyu-icon-envelope"></i></a><!--个人头像图标--><!--img.footer_mini_logo(title="返回顶部", alt="返回顶部" onclick="anzhiyu.scrollToDest(0, 500)", src=centerImg, size="50px")--><!-- 右侧图标--><a class="deal_link" target="_blank" rel="noopener" href="https://github.com/coderstart" title="Github"><i class="anzhiyufont anzhiyu-icon-github"></i></a><a class="deal_link" href="/copyright" title="CC"><i class="anzhiyufont anzhiyu-icon-copyright-line"></i></a></div><div id="anzhiyu-footer"><div class="footer-group"><div class="footer-title">导航</div><div class="footer-links"><a class="footer-item" title="文章列表" href="/archives/">文章列表</a><a class="footer-item" title="我的书单" href="/booklist/">我的书单</a><a class="footer-item" title="极客说说" href="/essay/">极客说说</a><a class="footer-item" title="关于本站" href="/about/">关于本站</a></div></div><div class="footer-group"><div class="footer-title">分类</div><div class="footer-links"><a class="footer-item" title="编程原理" href="/categories/%E7%BC%96%E7%A8%8B%E5%8E%9F%E7%90%86/">编程原理</a><a class="footer-item" title="系统架构" href="/categories/%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84/">系统架构</a><a class="footer-item" title="中间件" href="/categories/%E4%B8%AD%E9%97%B4%E4%BB%B6/">中间件</a><a class="footer-item" title="编程原理" href="/categories/%E7%BC%96%E7%A8%8B%E5%8E%9F%E7%90%86/">编程原理</a></div></div><div class="footer-group"><div class="footer-title">协议</div><div class="footer-links"><a class="footer-item" title="隐私协议" href="/privacy/">隐私协议</a><a class="footer-item" title="Cookies" href="/cookies/">Cookies</a><a class="footer-item" title="版权协议" href="/copyright/">版权协议</a></div></div><div class="footer-group"><div class="footer-title">友链</div><div class="footer-links"><a class="footer-item" title="编程导航" target="_blank" rel="noopener" href="https://tool.ivansli.com/">编程导航</a></div></div></div><p id="ghbdages"><a class="github-badge" target="_blank" style="margin-inline:5px" data-title="博客框架为Hexo" title="博客框架为Hexo"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/badge/Frame-Hexo.svg" alt="博客框架为Hexo"/></a><a class="github-badge" target="_blank" style="margin-inline:5px" data-title="本站使用AnZhiYu主题" title="本站使用AnZhiYu主题"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/badge/Theme-AnZhiYu-2E67D3.svg" alt="本站使用AnZhiYu主题"/></a><a class="github-badge" target="_blank" style="margin-inline:5px" data-title="本站采用知识共享署名-非商业性使用-相同方式共享4.0国际许可协议进行许可" title="本站采用知识共享署名-非商业性使用-相同方式共享4.0国际许可协议进行许可"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/img/badge/Copyright-BY-NC-SA.svg" alt="本站采用知识共享署名-非商业性使用-相同方式共享4.0国际许可协议进行许可"/></a></p></div><div id="footer-bar"><div class="footer-bar-links"><div class="footer-bar-left"><div id="footer-bar-tips"><div class="copyright">&copy;2019 - 2024 · <a class="footer-bar-link" href="/" title="ivansli" target="_blank">ivansli</a></div></div><div id="footer-type-tips"></div></div><div class="footer-bar-right"><a class="footer-bar-link" target="_blank" rel="noopener" href="http://beian.miit.gov.cn" title="沪ICP备2021031949号">沪ICP备2021031949号</a><a class="footer-bar-link" target="_blank" rel="noopener" href="https://tool.ivansli.com" title="编程导航">编程导航</a><a class="footer-bar-link cc" href="/" title="cc协议"><i class="anzhiyufont anzhiyu-icon-copyright-line"></i><i class="anzhiyufont anzhiyu-icon-creative-commons-by-line"></i><i class="anzhiyufont anzhiyu-icon-creative-commons-nc-line"></i><i class="anzhiyufont anzhiyu-icon-creative-commons-nd-line"></i></a></div></div></div></footer></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="sidebar-site-data site-data is-center"><a href="/archives/" title="archive"><div class="headline">文章</div><div class="length-num">80</div></a><a href="/tags/" title="tag"><div class="headline">标签</div><div class="length-num">37</div></a><a href="/categories/" title="category"><div class="headline">分类</div><div class="length-num">20</div></a></div><span class="sidebar-menu-item-title">功能</span><div class="sidebar-menu-item"><a class="darkmode_switchbutton menu-child" href="javascript:void(0);" title="显示模式"><i class="anzhiyufont anzhiyu-icon-circle-half-stroke"></i><span>显示模式</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/"><i class="anzhiyufont anzhiyu-icon-house-chimney faa-tada"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/archives/"><i class="anzhiyufont anzhiyu-icon-box-archive faa-tada"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags faa-tada"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/booklist/"><i class="anzhiyufont anzhiyu-icon-book faa-tada"></i><span> 书单</span></a></div><div class="menus_item"><a class="site-page faa-parent animated-hover" href="/about/"><i class="anzhiyufont anzhiyu-icon-paper-plane faa-tada"></i><span> 关于</span></a></div></div><span class="sidebar-menu-item-title">标签</span><div class="card-tags"><div class="item-headline"></div><div class="card-tag-cloud"><a href="/tags/Apple/" style="font-size: 0.88rem;">Apple<sup>2</sup></a><a href="/tags/CI-CD/" style="font-size: 0.88rem;">CI/CD<sup>1</sup></a><a href="/tags/C%E8%AF%AD%E8%A8%80/" style="font-size: 0.88rem;">C语言<sup>1</sup></a><a href="/tags/Docker/" style="font-size: 0.88rem;">Docker<sup>2</sup></a><a href="/tags/IoT/" style="font-size: 0.88rem;">IoT<sup>1</sup></a><a href="/tags/Linux/" style="font-size: 0.88rem;">Linux<sup>2</sup></a><a href="/tags/MySQL/" style="font-size: 0.88rem;">MySQL<sup>5</sup></a><a href="/tags/PHP/" style="font-size: 0.88rem;">PHP<sup>1</sup></a><a href="/tags/Python/" style="font-size: 0.88rem;">Python<sup>1</sup></a><a href="/tags/Unix/" style="font-size: 0.88rem;">Unix<sup>2</sup></a><a href="/tags/ZooKeeper/" style="font-size: 0.88rem;">ZooKeeper<sup>1</sup></a><a href="/tags/crontab/" style="font-size: 0.88rem;">crontab<sup>1</sup></a><a href="/tags/git/" style="font-size: 0.88rem;">git<sup>4</sup></a><a href="/tags/gitlab/" style="font-size: 0.88rem;">gitlab<sup>1</sup></a><a href="/tags/golang/" style="font-size: 0.88rem;">golang<sup>31</sup></a><a href="/tags/grpc-go/" style="font-size: 0.88rem;">grpc-go<sup>3</sup></a><a href="/tags/k8s/" style="font-size: 0.88rem;">k8s<sup>1</sup></a><a href="/tags/redis/" style="font-size: 0.88rem;">redis<sup>6</sup></a><a href="/tags/%E4%B8%AD%E6%96%87%E7%BC%96%E7%A8%8B/" style="font-size: 0.88rem;">中文编程<sup>1</sup></a><a href="/tags/%E4%B8%AD%E9%97%B4%E4%BB%B6/" style="font-size: 0.88rem;">中间件<sup>13</sup></a><a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8FID/" style="font-size: 0.88rem;">分布式ID<sup>1</sup></a><a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" style="font-size: 0.88rem;">分布式锁<sup>1</sup></a><a href="/tags/%E5%8D%9A%E5%BC%88%E8%AE%BA/" style="font-size: 0.88rem;">博弈论<sup>3</sup></a><a href="/tags/%E5%8F%B7%E6%AE%B5%E5%8F%91%E5%8F%B7%E5%99%A8/" style="font-size: 0.88rem;">号段发号器<sup>1</sup></a><a href="/tags/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/" style="font-size: 0.88rem;">常见问题<sup>6</sup></a><a href="/tags/%E6%8C%87%E6%95%B0%E9%80%80%E9%81%BF/" style="font-size: 0.88rem;">指数退避<sup>1</sup></a><a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 0.88rem;">数据库<sup>1</sup></a><a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 0.88rem;">消息队列<sup>1</sup></a><a href="/tags/%E7%AE%97%E6%B3%95%E6%8A%80%E5%B7%A7/" style="font-size: 0.88rem;">算法技巧<sup>6</sup></a><a href="/tags/%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84/" style="font-size: 0.88rem;">系统架构<sup>5</sup></a><a href="/tags/%E7%BB%8F%E6%B5%8E%E5%AD%A6/" style="font-size: 0.88rem;">经济学<sup>4</sup></a><a href="/tags/%E7%BC%96%E7%A8%8B%E5%8E%86%E5%8F%B2/" style="font-size: 0.88rem;">编程历史<sup>8</sup></a><a href="/tags/%E7%BC%96%E7%A8%8B%E5%8E%9F%E7%90%86/" style="font-size: 0.88rem;">编程原理<sup>31</sup></a><a href="/tags/%E7%BC%96%E7%A8%8B%E5%B7%A5%E5%85%B7/" style="font-size: 0.88rem;">编程工具<sup>1</sup></a><a href="/tags/%E8%81%8C%E5%9C%BA%E5%BF%83%E5%A3%B0/" style="font-size: 0.88rem;">职场心声<sup>1</sup></a><a href="/tags/%E8%BD%AF%E4%BB%B6%E5%B7%A5%E5%85%B7/" style="font-size: 0.88rem;">软件工具<sup>2</sup></a><a href="/tags/%E9%9D%A2%E8%AF%95%E7%BB%8F%E9%AA%8C/" style="font-size: 0.88rem;">面试经验<sup>4</sup></a></div></div><hr/></div></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="anzhiyufont anzhiyu-icon-book-open"></i></button><button id="translateLink" type="button" title="简繁转换">繁</button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="anzhiyufont anzhiyu-icon-circle-half-stroke"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="anzhiyufont anzhiyu-icon-arrows-left-right"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="anzhiyufont anzhiyu-icon-gear"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="anzhiyufont anzhiyu-icon-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i></button></div></div><div id="rightMenu"><div class="rightMenu-group rightMenu-small"><div class="rightMenu-item" id="menu-backward"><i class="anzhiyufont anzhiyu-icon-arrow-left"></i></div><div class="rightMenu-item" id="menu-forward"><i class="anzhiyufont anzhiyu-icon-arrow-right"></i></div><div class="rightMenu-item" id="menu-refresh"><i class="anzhiyufont anzhiyu-icon-arrow-rotate-right" style="font-size: 1rem;"></i></div><div class="rightMenu-item" id="menu-top"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i></div></div><div class="rightMenu-group rightMenu-line rightMenuPlugin"><div class="rightMenu-item" id="menu-copytext"><i class="anzhiyufont anzhiyu-icon-copy"></i><span>复制选中文本</span></div><div class="rightMenu-item" id="menu-pastetext"><i class="anzhiyufont anzhiyu-icon-paste"></i><span>粘贴文本</span></div><a class="rightMenu-item" id="menu-commenttext"><i class="anzhiyufont anzhiyu-icon-comment-medical"></i><span>引用到评论</span></a><div class="rightMenu-item" id="menu-newwindow"><i class="anzhiyufont anzhiyu-icon-window-restore"></i><span>新窗口打开</span></div><div class="rightMenu-item" id="menu-copylink"><i class="anzhiyufont anzhiyu-icon-link"></i><span>复制链接地址</span></div><div class="rightMenu-item" id="menu-copyimg"><i class="anzhiyufont anzhiyu-icon-images"></i><span>复制此图片</span></div><div class="rightMenu-item" id="menu-downloadimg"><i class="anzhiyufont anzhiyu-icon-download"></i><span>下载此图片</span></div><div class="rightMenu-item" id="menu-newwindowimg"><i class="anzhiyufont anzhiyu-icon-window-restore"></i><span>新窗口打开图片</span></div><div class="rightMenu-item" id="menu-search"><i class="anzhiyufont anzhiyu-icon-magnifying-glass"></i><span>站内搜索</span></div><div class="rightMenu-item" id="menu-searchBaidu"><i class="anzhiyufont anzhiyu-icon-magnifying-glass"></i><span>百度搜索</span></div><div class="rightMenu-item" id="menu-music-toggle"><i class="anzhiyufont anzhiyu-icon-play"></i><span>播放音乐</span></div><div class="rightMenu-item" id="menu-music-back"><i class="anzhiyufont anzhiyu-icon-backward"></i><span>切换到上一首</span></div><div class="rightMenu-item" id="menu-music-forward"><i class="anzhiyufont anzhiyu-icon-forward"></i><span>切换到下一首</span></div><div class="rightMenu-item" id="menu-music-playlist" onclick="window.open(&quot;https://y.qq.com/n/ryqq/playlist/8802438608&quot;, &quot;_blank&quot;);" style="display: none;"><i class="anzhiyufont anzhiyu-icon-radio"></i><span>查看所有歌曲</span></div><div class="rightMenu-item" id="menu-music-copyMusicName"><i class="anzhiyufont anzhiyu-icon-copy"></i><span>复制歌名</span></div></div><div class="rightMenu-group rightMenu-line rightMenuOther"><a class="rightMenu-item menu-link" id="menu-randomPost"><i class="anzhiyufont anzhiyu-icon-shuffle"></i><span>随便逛逛</span></a><a class="rightMenu-item menu-link" href="/categories/"><i class="anzhiyufont anzhiyu-icon-cube"></i><span>博客分类</span></a><a class="rightMenu-item menu-link" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags"></i><span>文章标签</span></a></div><div class="rightMenu-group rightMenu-line rightMenuOther"><a class="rightMenu-item" id="menu-copy" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-copy"></i><span>复制地址</span></a><a class="rightMenu-item" id="menu-commentBarrage" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-message"></i><span class="menu-commentBarrage-text">关闭热评</span></a><a class="rightMenu-item" id="menu-darkmode" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-circle-half-stroke"></i><span class="menu-darkmode-text">深色模式</span></a><a class="rightMenu-item" id="menu-translate" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-language"></i><span>轉為繁體</span></a></div></div><div id="rightmenu-mask"></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="/pluginsSrc/@fancyapps/ui/dist/fancybox/fancybox.umd.js"></script><script src="/pluginsSrc/instant.page/instantpage.js" type="module"></script><script src="/pluginsSrc/vanilla-lazyload/dist/lazyload.iife.min.js"></script><script src="/pluginsSrc/node-snackbar/dist/snackbar.min.js"></script><canvas id="universe"></canvas><script async src="https://npm.elemecdn.com/anzhiyu-theme-static@1.0.0/dark/dark.js"></script><script async src="/anzhiyu/random.js"></script><div class="js-pjax"><input type="hidden" name="page-type" id="page-type" value="post"></div><script async data-pjax src="https://npm.elemecdn.com/anzhiyu-theme-static@1.0.1/bubble/bubble.js"></script><script async data-pjax src="/pluginsSrc/anzhiyu-theme-static/waterfall/waterfall.js"></script><script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/qrcodejs/1.0.0/qrcode.min.js"></script><script src="/js/anzhiyu/right_click_menu.js"></script><link rel="stylesheet" href="/pluginsSrc/anzhiyu-theme-static/icon/ali_iconfont_css.css"><script defer="defer" id="fluttering_ribbon" mobile="true" src="/pluginsSrc/butterfly-extsrc/dist/canvas-fluttering-ribbon.min.js"></script><link rel="stylesheet" href="/pluginsSrc/anzhiyu-theme-static/aplayer/APlayer.min.css" media="print" onload="this.media='all'"><script src="/pluginsSrc/anzhiyu-blog-static/js/APlayer.min.js"></script><script src="/pluginsSrc/hexo-anzhiyu-music/assets/js/Meting2.min.js"></script><script src="/pluginsSrc/pjax/pjax.min.js"></script><script>let pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: false,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:send', function () {
+  // removeEventListener scroll 
+  anzhiyu.removeGlobalFnEvent('pjax')
+  anzhiyu.removeGlobalFnEvent('themeChange')
+
+  document.getElementById('rightside').classList.remove('rightside-show')
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  //reset readmode
+  const $bodyClassList = document.body.classList
+  $bodyClassList.contains('read-mode') && $bodyClassList.remove('read-mode')
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  document.querySelectorAll('script[data-pjax]').forEach(item => {
+    const newScript = document.createElement('script')
+    const content = item.text || item.textContent || item.innerHTML || ""
+    Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+    newScript.appendChild(document.createTextNode(content))
+    item.parentNode.replaceChild(newScript, item)
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof panguInit === 'function' && panguInit()
+
+  // google analytics
+  typeof gtag === 'function' && gtag('config', '', {'page_path': window.location.pathname});
+
+  // baidu analytics
+  typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+})
+
+document.addEventListener('pjax:error', e => {
+  if (e.request.status === 404) {
+    pjax.loadUrl('/404.html')
+  }
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><script charset="UTF-8" src="/pluginsSrc/anzhiyu-theme-static/accesskey/accesskey.js"></script></div><div id="popup-window"><div class="popup-window-title">通知</div><div class="popup-window-divider"></div><div class="popup-window-content"><div class="popup-tip">你好呀</div><div class="popup-link"><i class="anzhiyufont anzhiyu-icon-arrow-circle-right"></i></div></div></div></body></html>
